@@ -56,19 +56,41 @@ def home():
 async def analyze_contract_api(file: UploadFile):
     try:
         file_bytes = await file.read()
-        filename = file.filename.lower()
+        filename = file.filename.lower() if file.filename else ""
+        
+        # Debug logging
+        print(f"[ANALYZE] Received file: '{file.filename}', size: {len(file_bytes)} bytes")
+        print(f"[ANALYZE] Filename lowercase: '{filename}'")
+        
+        if not file_bytes or len(file_bytes) == 0:
+            return {"error": "Empty file received. Please select a valid file."}
         
         # Determine file type and extract text
         if filename.endswith('.pdf'):
+            print("[ANALYZE] Processing as PDF...")
             text = extract_text_from_pdf(file_bytes)
         elif filename.endswith('.docx'):
+            print("[ANALYZE] Processing as DOCX...")
             from backend.pdf_reader import extract_text_from_docx
             text = extract_text_from_docx(file_bytes)
+        elif filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif')):
+            # Handle image files with OCR
+            print("[ANALYZE] Processing as Image (OCR)...")
+            from backend.pdf_reader import extract_text_from_image
+            text = extract_text_from_image(file_bytes)
         else:
-            return {"error": "Unsupported file type. Please upload PDF or DOCX files."}
+            print(f"[ANALYZE] Unsupported file type: '{filename}'")
+            return {"error": f"Unsupported file type '{filename}'. Please upload PDF, DOCX, or image files (JPG, PNG)."}
 
+        print(f"[ANALYZE] Extracted text length: {len(text) if text else 0}")
+        
         if not text.strip():
-            return {"error": "No readable text extracted"}
+            # Provide more helpful error message
+            if filename.endswith('.pdf'):
+                return {"error": "No readable text extracted. This PDF may be image-based (scanned). Try uploading a text-based PDF, or install Tesseract OCR for scanned document support."}
+            elif filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif')):
+                return {"error": "No text could be extracted from the image. Please ensure Tesseract OCR is installed, or try uploading a PDF or DOCX file."}
+            return {"error": "No readable text extracted from the document."}
 
         contract_id = save_contract(file.filename, text)
         sla = analyze_contract(text)

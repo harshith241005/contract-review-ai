@@ -2,7 +2,7 @@
 
 class AppConfig {
   // API Base URL - Update this when deploying
-  static const String apiBaseUrl = 'http://localhost:8000';
+  static const String apiBaseUrl = 'http://localhost:8001';
   
   // API Endpoints
   static const String analyzeEndpoint = '/analyze';

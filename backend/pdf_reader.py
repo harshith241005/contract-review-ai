@@ -21,6 +21,12 @@ except ImportError:
     OCR_AVAILABLE = False
 
 try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
+try:
     from docx import Document
     DOCX_AVAILABLE = True
 except ImportError:
@@ -77,6 +83,39 @@ def extract_text_from_docx(docx_bytes: bytes) -> str:
         return ""
 
 
+def extract_text_from_image(image_bytes: bytes) -> str:
+    """
+    Extract text from image bytes using OCR.
+    
+    Args:
+        image_bytes: Raw bytes of the image file (JPG, PNG, etc.)
+    
+    Returns:
+        Extracted text string
+    """
+    if not OCR_AVAILABLE or not PIL_AVAILABLE:
+        print("OCR or PIL not available for image extraction")
+        return ""
+    
+    try:
+        # Open image from bytes
+        img = Image.open(io.BytesIO(image_bytes))
+        
+        # Convert to RGB if necessary (for PNG with transparency, etc.)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            img = img.convert('RGB')
+        
+        # Perform OCR
+        text = pytesseract.image_to_string(img, lang='eng')
+        
+        if text and text.strip():
+            return clean_extracted_text(text)
+    except Exception as e:
+        print(f"Image OCR extraction failed: {e}")
+    
+    return ""
+
+
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """
     Extract text from PDF bytes using multiple methods.
@@ -91,12 +130,19 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         Extracted text string
     """
     if not pdf_bytes:
+        print("[PDF] No bytes received")
         return ""
+    
+    print(f"[PDF] Received {len(pdf_bytes)} bytes")
+    print(f"[PDF] First 10 bytes: {pdf_bytes[:10]}")
+    print(f"[PDF] PDFMINER_AVAILABLE: {PDFMINER_AVAILABLE}")
 
     # Try pdfminer first (for digital/text-based PDFs)
     if PDFMINER_AVAILABLE:
         try:
+            print("[PDF] Attempting pdfminer extraction...")
             text = extract_text(io.BytesIO(pdf_bytes))
+            print(f"[PDF] pdfminer extracted {len(text) if text else 0} chars")
             if text and text.strip() and len(text.strip()) > 50:
                 return clean_extracted_text(text)
         except Exception as e:

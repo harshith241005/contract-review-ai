@@ -220,7 +220,7 @@ class _UploadContractScreenState extends State<UploadContractScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Tap to upload PDF',
+              'Tap to upload PDF or DOCX',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -375,6 +375,7 @@ class _UploadContractScreenState extends State<UploadContractScreen> {
             spacing: 8,
             children: [
               _buildFormatChip('PDF'),
+              _buildFormatChip('DOCX'),
               _buildFormatChip('JPG'),
               _buildFormatChip('PNG'),
             ],
@@ -399,7 +400,7 @@ class _UploadContractScreenState extends State<UploadContractScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf'],
+        allowedExtensions: ['pdf', 'docx'],
       );
       
       if (result != null && result.files.single.path != null) {
