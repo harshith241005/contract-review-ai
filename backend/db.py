@@ -25,6 +25,16 @@ def create_contracts_table():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Backward-compatible migration for existing DBs created before `created_at`.
+    cursor.execute("PRAGMA table_info(contracts)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if "created_at" not in columns:
+        cursor.execute("ALTER TABLE contracts ADD COLUMN created_at TIMESTAMP")
+        cursor.execute(
+            "UPDATE contracts SET created_at = datetime('now') WHERE created_at IS NULL"
+        )
+
     conn.commit()
     conn.close()
 

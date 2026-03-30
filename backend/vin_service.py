@@ -20,23 +20,57 @@ def get_vehicle_details(vin: str) -> dict:
     if not vin or len(vin) != 17:
         return {"error": "Invalid VIN format. Must be 17 characters."}
     
-    url = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json"
+    url_values = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/{vin}?format=json"
+    url_decode = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json"
     
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Parse the NHTSA response into a cleaner format
-        results = data.get("Results", [])
-        vehicle_info = {}
-        
+        # Primary path: DecodeVinValuesExtended has normalized fields and is
+        # generally more complete for common VIN lookups.
+        values_response = requests.get(url_values, timeout=10)
+        values_response.raise_for_status()
+        values_data = values_response.json()
+        values_results = values_data.get("Results", [])
+
+        if values_results:
+            row = values_results[0] or {}
+            vehicle_info = {
+                "vin": vin,
+                "make": row.get("Make"),
+                "model": row.get("Model"),
+                "year": row.get("ModelYear"),
+                "body_type": row.get("BodyClass"),
+                "vehicle_type": row.get("VehicleType"),
+                "drive_type": row.get("DriveType"),
+                "cylinders": row.get("EngineCylinders"),
+                "engine_displacement": row.get("DisplacementL"),
+                "fuel_type": row.get("FuelTypePrimary"),
+                "transmission": row.get("TransmissionStyle"),
+                "plant_city": row.get("PlantCity"),
+                "plant_country": row.get("PlantCountry"),
+                "manufacturer": row.get("Manufacturer"),
+                "doors": row.get("Doors"),
+                "seat_belt_type": row.get("SeatBeltsAll"),
+                "gvwr": row.get("GVWR"),
+                "raw_data": values_results,
+            }
+
+            # If essential fields exist, return immediately.
+            if vehicle_info.get("make") and vehicle_info.get("model") and vehicle_info.get("year"):
+                return vehicle_info
+
+        # Fallback path: DecodeVin variable/value format.
+        decode_response = requests.get(url_decode, timeout=10)
+        decode_response.raise_for_status()
+        decode_data = decode_response.json()
+
+        results = decode_data.get("Results", [])
+        vehicle_info = {"vin": vin}
+
         for item in results:
             variable = item.get("Variable", "")
             value = item.get("Value")
-            
+
             if value and value not in ["Not Applicable", ""]:
-                # Map common fields
                 field_mapping = {
                     "Make": "make",
                     "Model": "model",
@@ -55,13 +89,11 @@ def get_vehicle_details(vin: str) -> dict:
                     "Seat Belts All": "seat_belt_type",
                     "GVWR": "gvwr",
                 }
-                
+
                 if variable in field_mapping:
                     vehicle_info[field_mapping[variable]] = value
-        
-        vehicle_info["vin"] = vin
+
         vehicle_info["raw_data"] = results
-        
         return vehicle_info
         
     except requests.exceptions.Timeout:

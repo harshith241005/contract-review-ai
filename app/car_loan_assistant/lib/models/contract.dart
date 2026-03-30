@@ -20,16 +20,22 @@ class Contract {
   });
 
   factory Contract.fromJson(Map<String, dynamic> json) {
+    final slaJson = json['sla'] as Map<String, dynamic>?;
+    final vehicleInfoJson = json['vehicle_info'] as Map<String, dynamic>?;
+    final vehicleDetailsJson = slaJson != null
+        ? slaJson['vehicle_details'] as Map<String, dynamic>?
+        : null;
+
     return Contract(
       id: json['contract_id'] ?? json['id'] ?? 0,
       fileName: json['file_name'] ?? json['fileName'] ?? 'Unknown',
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
-      slaData: json['sla'] != null ? SlaData.fromJson(json['sla']) : null,
-      vehicleInfo: json['vehicle_info'] != null 
-          ? VehicleInfo.fromJson(json['vehicle_info']) 
-          : null,
+      slaData: slaJson != null ? SlaData.fromJson(slaJson) : null,
+      vehicleInfo: vehicleInfoJson != null
+          ? VehicleInfo.fromJson(vehicleInfoJson)
+          : (vehicleDetailsJson != null ? VehicleInfo.fromJson(vehicleDetailsJson) : null),
       fairnessScore: json['fairness'] != null
           ? FairnessScore.fromJson(json['fairness'])
           : null,

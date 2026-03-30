@@ -44,7 +44,7 @@ def calculate_fairness_score(sla: dict) -> dict:
     early_term = penalties.get("early_termination")
     if early_term and early_term not in [None, "No penalty", "Not specified", "null", ""]:
         score -= 15
-        reasons.append("Early termination penalty present")
+        reasons.append("Early termination penalty is present")
 
     # 3️⃣ Late payment penalty
     late_penalty = penalties.get("late_payment") or sla.get("late_payment_penalty")

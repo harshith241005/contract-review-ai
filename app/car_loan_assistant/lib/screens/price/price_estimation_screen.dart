@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/contract_provider.dart';
 import '../../services/api_service.dart';
 
 class PriceEstimationScreen extends StatefulWidget {
@@ -28,6 +30,22 @@ class _PriceEstimationScreenState extends State<PriceEstimationScreen> {
     'Kia', 'Volkswagen', 'Subaru', 'Mazda', 'Tesla'
   ];
   
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final contract = context.read<ContractProvider>().currentContract;
+      final vehicle = contract?.vehicleInfo;
+      if (vehicle != null) {
+        if ((vehicle.make ?? '').isNotEmpty) _makeController.text = vehicle.make!;
+        if ((vehicle.model ?? '').isNotEmpty) _modelController.text = vehicle.model!;
+        if ((vehicle.year ?? '').isNotEmpty) _yearController.text = vehicle.year!;
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
     _makeController.dispose();

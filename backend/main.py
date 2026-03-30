@@ -18,6 +18,72 @@ import json
 import traceback
 import requests
 
+
+def _has_value(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        trimmed = value.strip().lower()
+        return trimmed not in {"", "none", "null", "n/a", "na", "not specified"}
+    if isinstance(value, list):
+        return len(value) > 0
+    if isinstance(value, dict):
+        return len(value) > 0
+    return True
+
+
+def _merge_sla(regex_sla: Dict[str, Any], llm_sla: Dict[str, Any]) -> Dict[str, Any]:
+    merged = dict(regex_sla)
+
+    for key, llm_value in llm_sla.items():
+        base_value = merged.get(key)
+
+        if isinstance(base_value, dict) and isinstance(llm_value, dict):
+            nested = dict(base_value)
+            for nested_key, nested_llm_value in llm_value.items():
+                nested_base = nested.get(nested_key)
+                if not _has_value(nested_base) and _has_value(nested_llm_value):
+                    nested[nested_key] = nested_llm_value
+            merged[key] = nested
+            continue
+
+        if isinstance(base_value, list) and isinstance(llm_value, list):
+            if key in {"red_flags", "negotiation_points"}:
+                deduped = []
+                for item in [*base_value, *llm_value]:
+                    if item not in deduped:
+                        deduped.append(item)
+                merged[key] = deduped
+            elif not base_value and llm_value:
+                merged[key] = llm_value
+            continue
+
+        if not _has_value(base_value) and _has_value(llm_value):
+            merged[key] = llm_value
+
+    merged["extraction_method"] = "hybrid"
+    return merged
+
+
+def _analyze_contract_hybrid(text: str) -> Dict[str, Any]:
+    regex_sla = analyze_contract(text)
+
+    if not os.getenv("OPENAI_API_KEY"):
+        regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex"
+        return regex_sla
+
+    try:
+        from backend.llm_sla_extractor import extract_sla_with_llm
+
+        llm_sla = extract_sla_with_llm(text)
+        if isinstance(llm_sla, dict) and llm_sla:
+            return _merge_sla(regex_sla, llm_sla)
+    except Exception:
+        pass
+
+    regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex"
+    return regex_sla
+
 # Initialize database tables on startup
 create_contracts_table()
 create_sla_table()
@@ -93,7 +159,7 @@ async def analyze_contract_api(file: UploadFile):
             return {"error": "No readable text extracted from the document."}
 
         contract_id = save_contract(file.filename, text)
-        sla = analyze_contract(text)
+        sla = _analyze_contract_hybrid(text)
         save_sla(contract_id, sla)
         
         # Calculate fairness score
@@ -124,29 +190,39 @@ async def vin_lookup(vin: str):
             return {"error": "VIN must be exactly 17 characters"}
         
         vehicle_data = get_vehicle_details(vin)
-        
-        # Parse NHTSA response
-        results = vehicle_data.get("Results", [])
-        parsed_data = {"vin": vin}
-        
-        for item in results:
-            variable = item.get("Variable")
-            value = item.get("Value")
-            if variable and value:
-                parsed_data[variable] = value
-        
-        # Extract key fields
+        if "error" in vehicle_data:
+            return vehicle_data
+
+        # vin_service already returns mapped keys; use them directly.
         vehicle_info = {
             "vin": vin,
-            "make": parsed_data.get("Make"),
-            "model": parsed_data.get("Model"),
-            "year": parsed_data.get("Model Year"),
-            "manufacturer": parsed_data.get("Manufacturer Name"),
-            "vehicle_type": parsed_data.get("Vehicle Type"),
-            "engine_info": parsed_data.get("Engine Model"),
-            "fuel_type": parsed_data.get("Fuel Type - Primary"),
-            "transmission": parsed_data.get("Transmission Style"),
+            "make": vehicle_data.get("make"),
+            "model": vehicle_data.get("model"),
+            "year": vehicle_data.get("year"),
+            "manufacturer": vehicle_data.get("manufacturer"),
+            "vehicle_type": vehicle_data.get("vehicle_type"),
+            "engine_info": vehicle_data.get("engine_model") or vehicle_data.get("engine_info"),
+            "fuel_type": vehicle_data.get("fuel_type"),
+            "transmission": vehicle_data.get("transmission"),
         }
+
+        # Fallback: extract missing fields from raw_data if needed.
+        if not vehicle_info["make"] or not vehicle_info["model"] or not vehicle_info["year"]:
+            parsed_data = {}
+            for item in vehicle_data.get("raw_data", []):
+                variable = item.get("Variable")
+                value = item.get("Value")
+                if variable and value:
+                    parsed_data[variable] = value
+
+            vehicle_info["make"] = vehicle_info["make"] or parsed_data.get("Make")
+            vehicle_info["model"] = vehicle_info["model"] or parsed_data.get("Model")
+            vehicle_info["year"] = vehicle_info["year"] or parsed_data.get("Model Year")
+            vehicle_info["manufacturer"] = vehicle_info["manufacturer"] or parsed_data.get("Manufacturer Name")
+            vehicle_info["vehicle_type"] = vehicle_info["vehicle_type"] or parsed_data.get("Vehicle Type")
+            vehicle_info["engine_info"] = vehicle_info["engine_info"] or parsed_data.get("Engine Model")
+            vehicle_info["fuel_type"] = vehicle_info["fuel_type"] or parsed_data.get("Fuel Type - Primary")
+            vehicle_info["transmission"] = vehicle_info["transmission"] or parsed_data.get("Transmission Style")
         
         # Get recalls
         try:
@@ -214,20 +290,45 @@ async def get_price_estimate(make: str, model: str, year: str, zip: Optional[str
             "default": 28000
         }
         
-        # Determine category from model name (simplified logic)
-        model_lower = model.lower()
-        if any(x in model_lower for x in ["camry", "accord", "civic", "corolla"]):
-            category = "sedan"
-        elif any(x in model_lower for x in ["rav4", "cr-v", "explorer", "highlander"]):
-            category = "suv"
-        elif any(x in model_lower for x in ["f-150", "silverado", "ram", "tundra"]):
-            category = "truck"
-        elif any(x in model_lower for x in ["fit", "yaris", "versa"]):
-            category = "compact"
-        elif any(x in model_lower for x in ["bmw", "mercedes", "lexus", "audi"]):
+        # Determine category from make + model + known models from NHTSA.
+        model_lower = model.lower().strip()
+        make_lower = make.lower().strip()
+        known_models = [str(m.get("Model_Name", "")).lower() for m in models if m.get("Model_Name")]
+        model_token = "".join(ch for ch in model_lower if ch.isalnum() or ch.isspace()).strip()
+        relevant_models = []
+        if model_token:
+            for km in known_models:
+                if model_token in km or km in model_token:
+                    relevant_models.append(km)
+            relevant_models = relevant_models[:10]
+        lookup_text = f"{make_lower} {model_lower} {' '.join(relevant_models)}"
+
+        sedan_keywords = ["camry", "accord", "civic", "corolla", "elantra", "sonata", "altima", "sentra", "jetta", "passat", "mazda3", "model 3"]
+        suv_keywords = ["rav4", "cr-v", "explorer", "highlander", "santa fe", "tiguan", "x3", "x5", "model y", "wrangler", "sportage", "cx-5"]
+        truck_keywords = ["f-150", "silverado", "ram", "tundra", "sierra", "ranger", "tacoma", "colorado"]
+        compact_keywords = ["fit", "yaris", "versa", "rio", "spark", "picanto", "micra"]
+        luxury_make_keywords = ["bmw", "mercedes", "audi", "lexus", "acura", "infiniti", "porsche", "jaguar", "land rover", "genesis", "volvo"]
+
+        if any(x in lookup_text for x in luxury_make_keywords):
             category = "luxury"
+        elif any(x in lookup_text for x in suv_keywords):
+            category = "suv"
+        elif any(x in lookup_text for x in sedan_keywords):
+            category = "sedan"
+        elif any(x in lookup_text for x in truck_keywords):
+            category = "truck"
+        elif any(x in lookup_text for x in compact_keywords):
+            category = "compact"
         else:
-            category = "default"
+            # Make-level fallback to avoid too many generic defaults.
+            if make_lower in ["toyota", "honda", "nissan", "hyundai", "kia", "mazda", "subaru", "volkswagen", "skoda"]:
+                category = "sedan"
+            elif make_lower in ["jeep", "land rover", "mahindra"]:
+                category = "suv"
+            elif make_lower in ["ford", "chevrolet", "gmc", "ram"] and model_lower in ["", "na", "n/a", "unknown"]:
+                category = "truck"
+            else:
+                category = "default"
         
         base_price = base_prices[category]
         
@@ -526,7 +627,7 @@ async def analyze_text(request: TextAnalyzeRequest):
             return {"error": "No text provided"}
 
         contract_id = save_contract("direct_text_input", request.text)
-        sla = analyze_contract(request.text)
+        sla = _analyze_contract_hybrid(request.text)
         save_sla(contract_id, sla)
         
         # Calculate fairness score
@@ -600,7 +701,7 @@ async def analyze_sample(filename: str):
             return {"error": "No readable text extracted from sample"}
         
         contract_id = save_contract(filename, text)
-        sla = analyze_contract(text)
+        sla = _analyze_contract_hybrid(text)
         save_sla(contract_id, sla)
         
         fairness = calculate_fairness_score(sla)

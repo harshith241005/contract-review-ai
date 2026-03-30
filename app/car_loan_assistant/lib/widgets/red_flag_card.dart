@@ -8,14 +8,23 @@ class RedFlagCard extends StatelessWidget {
 
   const RedFlagCard({super.key, required this.message});
 
+  String _normalizedMessage(String input) {
+    var normalized = input.trim();
+    if (normalized.toLowerCase() == 'early termination penalty present') {
+      normalized = 'Early termination penalty is present';
+    }
+    if (normalized.isEmpty) return normalized;
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: AppTheme.errorColor.withOpacity(0.1),
+      color: const Color(0xFFFFF4F2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppTheme.errorColor.withOpacity(0.3)),
+        side: const BorderSide(color: Color(0xFFF1B6AE)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -25,7 +34,7 @@ class RedFlagCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.errorColor.withOpacity(0.2),
+                color: const Color(0xFFFDE3DF),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -49,9 +58,11 @@ class RedFlagCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    message,
+                    _normalizedMessage(message),
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

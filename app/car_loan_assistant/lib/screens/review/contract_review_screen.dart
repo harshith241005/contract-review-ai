@@ -8,7 +8,6 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/contract_provider.dart';
 import '../../models/sla_data.dart';
-import '../../widgets/sla_term_card.dart';
 import '../../widgets/red_flag_card.dart';
 
 class ContractReviewScreen extends StatelessWidget {
@@ -114,6 +113,11 @@ class ContractReviewScreen extends StatelessWidget {
                 // Contract Details Section
                 _buildSectionHeader(context, 'Contract Terms', Icons.description, AppTheme.primaryColor),
                 _buildContractTerms(context, sla),
+
+                if (sla != null) ...[
+                  _buildSectionHeader(context, 'Additional Extracted Terms', Icons.data_object, AppTheme.infoColor),
+                  _buildAllExtractedFieldsCard(sla),
+                ],
                 
                 // Vehicle Info Section
                 if (contract.vehicleInfo != null) ...[
@@ -318,13 +322,174 @@ class ContractReviewScreen extends StatelessWidget {
         child: Text('No contract terms extracted'),
       );
     }
-    
-    final terms = sla.allTerms.where((t) => t.hasValue).toList();
-    
+
+    final keyFinancials = <MapEntry<String, String?>>[
+      MapEntry('Contract Type', sla.contractType),
+      MapEntry('APR', _formatPercent(sla.interestRateApr)),
+      MapEntry('Term', _formatMonths(sla.leaseTermMonths)),
+      MapEntry('Monthly Payment', _formatCurrency(sla.monthlyPayment)),
+      MapEntry('Down Payment', _formatCurrency(sla.downPayment)),
+      MapEntry('Amount Financed', _formatCurrency(sla.financeAmount)),
+      MapEntry('Total Due At Signing', _formatCurrency(sla.totalDueAtSigning)),
+      MapEntry('Total Cost', _formatCurrency(sla.totalCost)),
+    ].where((entry) => _isMeaningful(entry.value)).toList();
+
+    final leaseTerms = <MapEntry<String, String?>>[
+      MapEntry('Residual Value', _formatCurrency(sla.residualValue)),
+      MapEntry('Mileage Allowance', sla.mileageAllowance != null ? '${sla.mileageAllowance} miles' : null),
+      MapEntry('Over Mileage Charge', sla.overageChargePerMile != null ? '\$${sla.overageChargePerMile}/mile' : null),
+      MapEntry('Purchase Option Price', _formatCurrency(sla.purchaseOptionPrice)),
+      MapEntry('Early Termination', sla.earlyTerminationClause),
+      MapEntry('Late Payment Penalty', _formatCurrency(sla.latePaymentPenalty)),
+      MapEntry('Insurance Requirements', sla.insuranceRequirements),
+      MapEntry('Warranty Coverage', sla.warrantyCoverage),
+      MapEntry('Maintenance Responsibility', sla.maintenanceResponsibility),
+    ].where((entry) => _isMeaningful(entry.value)).toList();
+
+    final feeRows = sla.fees.entries
+        .where((entry) => _isMeaningful(entry.value))
+        .map((entry) => MapEntry(_normalizeLabel(entry.key), _formatCurrency(entry.value)))
+        .toList();
+
+    final penaltyRows = sla.penalties.entries
+        .where((entry) => _isMeaningful(entry.value))
+        .map((entry) {
+          final isMoney = entry.key != 'early_termination' || (entry.value != null && double.tryParse(entry.value!) != null);
+          return MapEntry(_normalizeLabel(entry.key), isMoney ? _formatCurrency(entry.value) : entry.value);
+        })
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: terms.map((term) => SlaTermCard(term: term)).toList(),
+        children: [
+          if (keyFinancials.isNotEmpty)
+            _buildDetailCard('Core Financials', Icons.account_balance_wallet, AppTheme.successColor, keyFinancials),
+          if (leaseTerms.isNotEmpty)
+            _buildDetailCard('Lease and Coverage Terms', Icons.description, AppTheme.primaryColor, leaseTerms),
+          if (feeRows.isNotEmpty)
+            _buildDetailCard('Fees Breakdown', Icons.receipt_long, AppTheme.warningColor, feeRows),
+          if (penaltyRows.isNotEmpty)
+            _buildDetailCard('Penalty Clauses', Icons.gavel, AppTheme.errorColor, penaltyRows),
+          if ((sla.extractionMethod ?? '').isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'Extraction: ${sla.extractionMethod}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailCard(
+    String title,
+    IconData icon,
+    Color color,
+    List<MapEntry<String, String?>> rows,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const Divider(height: 18),
+            ...rows.map((entry) => _buildInfoRow(entry.key, entry.value ?? 'N/A')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAllExtractedFieldsCard(SlaData sla) {
+    final hiddenExactKeys = <String>{
+      'vin',
+      'loan_type',
+      'contract_type',
+      'apr_percent',
+      'interest_rate_apr',
+      'monthly_payment',
+      'term_months',
+      'lease_term_months',
+      'down_payment',
+      'finance_amount',
+      'total_due_at_signing',
+      'total_cost',
+      'residual_value',
+      'purchase_option_price',
+      'mileage_allowance',
+      'overage_charge_per_mile',
+      'late_payment_penalty',
+      'early_termination_clause',
+      'extraction_method',
+    };
+
+    final hiddenPrefixes = <String>[
+      'fees.',
+      'penalties.',
+      'vehicle_details.',
+      'red_flags',
+    ];
+
+    final pairs = sla.allExtractedKeyValuePairs.where((pair) {
+      final key = pair.key;
+      if (hiddenExactKeys.contains(key)) {
+        return false;
+      }
+      for (final prefix in hiddenPrefixes) {
+        if (key.startsWith(prefix)) {
+          return false;
+        }
+      }
+      return _isMeaningful(pair.value);
+    }).toList();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.key, size: 18, color: AppTheme.infoColor),
+                const SizedBox(width: 8),
+                Text(
+                  '${pairs.length} additional fields',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const Divider(height: 18),
+            if (pairs.isEmpty)
+              const Text('No extracted key-value data available')
+            else
+              ...pairs.map(
+                (pair) => _buildInfoRow(
+                  _normalizePathLabel(pair.key),
+                  pair.value,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -461,5 +626,41 @@ class ContractReviewScreen extends StatelessWidget {
     if (score >= 60) return 'This contract is reasonable but has room for negotiation';
     if (score >= 40) return 'Consider negotiating several terms';
     return 'This contract needs significant negotiation';
+  }
+
+  bool _isMeaningful(String? value) {
+    if (value == null) return false;
+    final normalized = value.trim().toLowerCase();
+    return normalized.isNotEmpty && normalized != 'null' && normalized != 'n/a' && normalized != 'na';
+  }
+
+  String? _formatCurrency(String? value) {
+    if (!_isMeaningful(value)) return null;
+    final number = double.tryParse(value!.replaceAll(',', '').replaceAll(r'$', '').trim());
+    if (number == null) return value;
+    if (number % 1 == 0) return '\$${number.toStringAsFixed(0)}';
+    return '\$${number.toStringAsFixed(2)}';
+  }
+
+  String? _formatPercent(String? value) {
+    if (!_isMeaningful(value)) return null;
+    final cleaned = value!.replaceAll('%', '').trim();
+    return '$cleaned%';
+  }
+
+  String? _formatMonths(String? value) {
+    if (!_isMeaningful(value)) return null;
+    return '${value!.trim()} months';
+  }
+
+  String _normalizeLabel(String key) {
+    final parts = key.split('_').where((p) => p.isNotEmpty).toList();
+    return parts.map((p) => p[0].toUpperCase() + p.substring(1)).join(' ');
+  }
+
+  String _normalizePathLabel(String key) {
+    final segments = key.split('.').where((s) => s.isNotEmpty).toList();
+    final normalized = segments.map(_normalizeLabel).join(' / ');
+    return normalized;
   }
 }

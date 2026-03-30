@@ -27,7 +27,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    final contracts = await StorageService.getContractHistory();
+    final contracts = await context.read<ContractProvider>().loadHistory();
     setState(() {
       _contracts = contracts;
       _isLoading = false;

@@ -83,7 +83,31 @@ class ContractProvider extends ChangeNotifier {
   
   // Load contract history
   Future<List<Contract>> loadHistory() async {
-    return StorageService.getContractHistory();
+    try {
+      final localHistory = await StorageService.getContractHistory();
+      final backendResponse = await _apiService.getContracts();
+
+      final merged = <String, Contract>{};
+
+      for (final contract in localHistory) {
+        final key = '${contract.id}-${contract.fileName}-${contract.createdAt.toIso8601String()}';
+        merged[key] = contract;
+      }
+
+      if (backendResponse.isSuccess && backendResponse.data != null) {
+        for (final contract in backendResponse.data!) {
+          final key = '${contract.id}-${contract.fileName}-${contract.createdAt.toIso8601String()}';
+          merged.putIfAbsent(key, () => contract);
+        }
+      }
+
+      final allContracts = merged.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return allContracts;
+    } catch (_) {
+      return StorageService.getContractHistory();
+    }
   }
   
   // Clear error

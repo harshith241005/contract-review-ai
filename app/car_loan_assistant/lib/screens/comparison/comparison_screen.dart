@@ -8,8 +8,26 @@ import '../../config/routes.dart';
 import '../../providers/contract_provider.dart';
 import '../../models/contract.dart';
 
-class ComparisonScreen extends StatelessWidget {
+class ComparisonScreen extends StatefulWidget {
   const ComparisonScreen({super.key});
+
+  @override
+  State<ComparisonScreen> createState() => _ComparisonScreenState();
+}
+
+class _ComparisonScreenState extends State<ComparisonScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<ContractProvider>();
+      final current = provider.currentContract;
+      if (current != null && !provider.comparisonContracts.any((c) => c.id == current.id)) {
+        provider.addToComparison(current);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -24,13 +24,13 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
             apr_float = float(str(apr).replace('%', ''))
             if apr_float > 12:
                 points.append(
-                    f"🔴 HIGH PRIORITY: Your APR of {apr_float}% is above average. "
+                    f"HIGH PRIORITY: Your APR of {apr_float}% is above average. "
                     "Current market rates are around 5-8%. Ask for a rate reduction or "
                     "get pre-approved from a bank/credit union for leverage."
                 )
             elif apr_float > 8:
                 points.append(
-                    f"🟡 MEDIUM PRIORITY: Your APR of {apr_float}% is slightly high. "
+                    f"MEDIUM PRIORITY: Your APR of {apr_float}% is slightly high. "
                     "Consider negotiating for a lower rate or shorter term."
                 )
         except ValueError:
@@ -44,12 +44,12 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
             doc_amount = float(str(doc_fee).replace('$', '').replace(',', ''))
             if doc_amount > 500:
                 points.append(
-                    f"🔴 HIGH PRIORITY: Documentation fee of ${doc_amount} is excessive. "
+                    f"HIGH PRIORITY: Documentation fee of ${doc_amount} is excessive. "
                     "Request reduction or complete waiver - this is often negotiable."
                 )
             else:
                 points.append(
-                    "🟢 Consider asking to waive or reduce the documentation fee."
+                    "LOW PRIORITY: Consider asking to waive or reduce the documentation fee."
                 )
         except ValueError:
             points.append("Request reduction or waiver of the documentation fee.")
@@ -57,7 +57,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
     # Acquisition fee (for leases)
     if fees.get("acquisition_fee"):
         points.append(
-            "🟡 Acquisition fees are sometimes negotiable. "
+            "MEDIUM PRIORITY: Acquisition fees are sometimes negotiable. "
             "Ask if this can be reduced or rolled into the capitalized cost."
         )
 
@@ -66,7 +66,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
     early_term = penalties.get("early_termination")
     if early_term and early_term not in ["No penalty", "Not specified", None, "null"]:
         points.append(
-            "🔴 HIGH PRIORITY: Early termination penalty exists. "
+            "HIGH PRIORITY: Early termination penalty exists. "
             "Negotiate for a shorter penalty period or lower fees. "
             "Ask about early payoff without penalty after a certain time."
         )
@@ -75,7 +75,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
     late_payment = penalties.get("late_payment") or sla.get("late_payment_penalty")
     if late_payment:
         points.append(
-            "🟡 Negotiate for a grace period before late fees apply "
+            "MEDIUM PRIORITY: Negotiate for a grace period before late fees apply "
             "(typically 10-15 days is reasonable)."
         )
 
@@ -86,7 +86,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
             miles = int(str(mileage).replace(',', '').replace(' miles', ''))
             if miles < 12000:
                 points.append(
-                    f"🔴 WARNING: {miles} miles/year is below average. "
+                    f"HIGH PRIORITY: {miles} miles/year is below average. "
                     "Most drivers need 12,000-15,000 miles. "
                     "Negotiate higher mileage or lower overage charges."
                 )
@@ -100,7 +100,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
             charge = float(str(overage).replace('$', '').replace('/mile', ''))
             if charge > 0.20:
                 points.append(
-                    f"🟡 Overage charge of ${charge}/mile is high. "
+                    f"MEDIUM PRIORITY: Overage charge of ${charge}/mile is high. "
                     "Industry average is $0.15-0.20. Negotiate this down."
                 )
         except ValueError:
@@ -110,7 +110,7 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
     down = sla.get("down_payment")
     if down:
         points.append(
-            "💡 TIP: For leases, consider a lower down payment. "
+            "TIP: For leases, consider a lower down payment. "
             "If the car is totaled, you lose your down payment."
         )
 
@@ -118,30 +118,30 @@ def generate_negotiation_points(sla: dict, fairness: dict) -> list:
     red_flags = sla.get("red_flags", [])
     for flag in red_flags:
         if flag not in [f for p in points for f in p.split()]:
-            points.append(f"⚠️ RED FLAG: {flag}")
+            points.append(f"RED FLAG: {flag}")
 
     # Overall fairness check
     score = fairness.get("fairness_score", 100)
     if score < 50:
         points.insert(0,
-            "🚨 CRITICAL: This contract has a low fairness score. "
+            "CRITICAL: This contract has a low fairness score. "
             "Consider walking away or demanding significant improvements."
         )
     elif score < 70:
         points.append(
-            "🟡 Overall contract fairness is below average. "
+            "MEDIUM PRIORITY: Overall contract fairness is below average. "
             "Ask the dealer to justify pricing and improve terms."
         )
     elif score >= 90:
         points.append(
-            "🟢 Contract appears fair overall. "
+            "LOW PRIORITY: Contract appears fair overall. "
             "You may still ask for minor concessions on fees."
         )
 
     # Default if no issues found
     if not points:
         points.append(
-            "✅ This contract appears fair. "
+            "NO MAJOR ISSUES: This contract appears fair. "
             "You may still ask for small concessions like waiving fees "
             "or adding perks (free maintenance, accessories, etc.)."
         )
@@ -178,7 +178,23 @@ REQUESTED ADJUSTMENTS:
     
     for i, point in enumerate(points[:5], 1):
         # Clean up the point for email
-        clean_point = point.replace("🔴 HIGH PRIORITY: ", "").replace("🟡 MEDIUM PRIORITY: ", "").replace("🟢 ", "").replace("💡 TIP: ", "").replace("⚠️ RED FLAG: ", "").replace("🚨 CRITICAL: ", "")
+        clean_point = (
+            point
+            .replace("HIGH PRIORITY: ", "")
+            .replace("MEDIUM PRIORITY: ", "")
+            .replace("LOW PRIORITY: ", "")
+            .replace("TIP: ", "")
+            .replace("RED FLAG: ", "")
+            .replace("CRITICAL: ", "")
+            .replace("NO MAJOR ISSUES: ", "")
+            .replace("🔴 HIGH PRIORITY: ", "")
+            .replace("🟡 MEDIUM PRIORITY: ", "")
+            .replace("🟢 ", "")
+            .replace("💡 TIP: ", "")
+            .replace("⚠️ RED FLAG: ", "")
+            .replace("🚨 CRITICAL: ", "")
+            .replace("✅ ", "")
+        )
         email += f"\n{i}. {clean_point}"
     
     email += f"""

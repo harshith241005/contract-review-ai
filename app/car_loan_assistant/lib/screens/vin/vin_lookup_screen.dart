@@ -1,10 +1,12 @@
 // VIN Lookup Screen
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../config/theme.dart';
 import '../../models/contract.dart';
+import '../../providers/contract_provider.dart';
 import '../../services/vin_service.dart';
 import '../../services/storage_service.dart';
 
@@ -20,6 +22,22 @@ class _VinLookupScreenState extends State<VinLookupScreen> {
   bool _isLoading = false;
   VehicleInfo? _vehicleInfo;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final contract = context.read<ContractProvider>().currentContract;
+      final vin = contract?.vehicleInfo?.vin?.trim();
+      if (vin != null && vin.isNotEmpty) {
+        setState(() {
+          _vinController.text = vin;
+          _vehicleInfo = contract?.vehicleInfo;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -115,6 +133,28 @@ class _VinLookupScreenState extends State<VinLookupScreen> {
                       ),
                     )
                   : const Text('Look Up Vehicle', style: TextStyle(color: Colors.white)),
+            ),
+
+            const SizedBox(height: 8),
+
+            Consumer<ContractProvider>(
+              builder: (context, provider, child) {
+                final contractVin = provider.currentContract?.vehicleInfo?.vin;
+                if (contractVin == null || contractVin.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _vinController.text = contractVin;
+                      _error = null;
+                    });
+                    _lookupVin();
+                  },
+                  icon: const Icon(Icons.assignment_turned_in),
+                  label: const Text('Use Current Contract VIN'),
+                );
+              },
             ),
             
             // Error Message
