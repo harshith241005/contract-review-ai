@@ -1,9 +1,6 @@
 // Chat Bubble Widget - Premium Redesign
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../config/theme.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/negotiation.dart';
 
 class ChatBubble extends StatefulWidget {
@@ -27,7 +24,7 @@ class _ChatBubbleState extends State<ChatBubble>
   void initState() {
     super.initState();
     _animController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _fadeAnim = CurvedAnimation(
@@ -35,7 +32,7 @@ class _ChatBubbleState extends State<ChatBubble>
       curve: Curves.easeOut,
     );
     _slideAnim = Tween<Offset>(
-      begin: Offset(widget.message.isUser ? 0.3 : -0.3, 0.1),
+      begin: Offset(widget.message.isUser ? 0.2 : -0.2, 0.05),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animController,
@@ -43,7 +40,7 @@ class _ChatBubbleState extends State<ChatBubble>
     ));
 
     if (!widget.message.isAnimated) {
-      Future.delayed(Duration(milliseconds: 50 * widget.index), () {
+      Future.delayed(Duration(milliseconds: 100 * (widget.index % 10)), () {
         if (mounted) {
           _animController.forward();
           widget.message.isAnimated = true;
@@ -90,10 +87,10 @@ class _ChatBubbleState extends State<ChatBubble>
           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             margin: EdgeInsets.only(
-              top: 6,
-              bottom: 6,
-              left: isUser ? 60 : 0,
-              right: isUser ? 0 : 40,
+              top: 4,
+              bottom: 4,
+              left: isUser ? 50 : 0,
+              right: isUser ? 0 : 50,
             ),
             child: Column(
               crossAxisAlignment:
@@ -101,11 +98,11 @@ class _ChatBubbleState extends State<ChatBubble>
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (!isUser) ...[
                       _buildAvatar(),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                     ],
                     Flexible(child: _buildBubble(isUser)),
                   ],
@@ -114,7 +111,7 @@ class _ChatBubbleState extends State<ChatBubble>
                 Padding(
                   padding: EdgeInsets.only(
                     left: isUser ? 0 : 44,
-                    right: isUser ? 4 : 0,
+                    right: isUser ? 8 : 0,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -157,15 +154,26 @@ class _ChatBubbleState extends State<ChatBubble>
 
   Widget _buildAvatar() {
     return Container(
-      width: 28,
-      height: 28,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(8),
+        gradient: const LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.accentColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: const Icon(
         Icons.smart_toy_rounded,
-        size: 16,
+        size: 18,
         color: Colors.white,
       ),
     );
@@ -177,129 +185,78 @@ class _ChatBubbleState extends State<ChatBubble>
       decoration: BoxDecoration(
         color: isUser ? AppTheme.primaryColor : Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(20),
-          topRight: const Radius.circular(20),
-          bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(4),
-          bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(20),
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
+          bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isUser ? 0.08 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
         border: isUser
             ? null
-            : Border.all(color: Colors.grey.shade200, width: 1.5),
+            : Border.all(color: Colors.grey.shade100, width: 1),
       ),
-      child: _buildMessageContent(isUser),
-    );
-  }
-
-  Widget _buildMessageContent(bool isUser) {
-    final content = widget.message.content;
-    final lines = content.split('\n');
-    final widgets = <Widget>[];
-
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-
-      if (line.startsWith('**') && line.endsWith('**')) {
-        widgets.add(Padding(
-          padding: EdgeInsets.only(top: i > 0 ? 8 : 0, bottom: 4),
-          child: Text(
-            line.replaceAll('**', ''),
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: isUser ? Colors.white : AppTheme.primaryColor,
-              fontSize: 15,
-            ),
+      child: MarkdownBody(
+        data: widget.message.content,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.textPrimary,
+            fontSize: 14,
+            height: 1.5,
           ),
-        ));
-      } else if (line.startsWith('•') ||
-          line.startsWith('✅') ||
-          line.startsWith('🎯') ||
-          line.startsWith('1️⃣') ||
-          line.startsWith('2️⃣') ||
-          line.startsWith('3️⃣') ||
-          line.startsWith('4️⃣') ||
-          line.startsWith('5️⃣')) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(left: 10, top: 4, bottom: 2),
-          child: Text(
-            line,
-            style: GoogleFonts.poppins(
-              color: isUser ? Colors.white.withValues(alpha: 0.95) : AppTheme.textPrimary,
-              fontSize: 13.5,
-              height: 1.5,
-            ),
+          strong: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
           ),
-        ));
-      } else if (line.startsWith('---')) {
-        widgets.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isUser
-                    ? [Colors.white24, Colors.white54, Colors.white24]
-                    : [Colors.grey.shade200, Colors.grey.shade400, Colors.grey.shade200],
+          listBullet: GoogleFonts.poppins(
+            color: isUser ? Colors.white70 : Colors.grey[600],
+            fontSize: 14,
+          ),
+          h1: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+          h2: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+          blockquote: GoogleFonts.poppins(
+            color: isUser ? Colors.white70 : Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+          blockquoteDecoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: isUser ? Colors.white30 : Colors.grey[300]!,
+                width: 3,
               ),
             ),
           ),
-        ));
-      } else if (line.isEmpty) {
-        widgets.add(const SizedBox(height: 6));
-      } else {
-        // Parse inline bold
-        widgets.add(_buildRichLine(line, isUser));
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widgets,
-    );
-  }
-
-  Widget _buildRichLine(String line, bool isUser) {
-    final baseColor = isUser ? Colors.white.withValues(alpha: 0.95) : AppTheme.textPrimary;
-    final boldColor = isUser ? Colors.white : AppTheme.primaryColor;
-
-    // Parse **bold** inline
-    final regex = RegExp(r'\*\*(.*?)\*\*');
-    final spans = <TextSpan>[];
-    int lastEnd = 0;
-
-    for (final match in regex.allMatches(line)) {
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(
-          text: line.substring(lastEnd, match.start),
-          style: GoogleFonts.poppins(color: baseColor, fontSize: 13.5, height: 1.5),
-        ));
-      }
-      spans.add(TextSpan(
-        text: match.group(1),
-        style: GoogleFonts.poppins(
-          color: boldColor,
-          fontWeight: FontWeight.w600,
-          fontSize: 13.5,
-          height: 1.5,
+          tableBody: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.textPrimary,
+            fontSize: 12,
+          ),
+          tableHead: GoogleFonts.poppins(
+            color: isUser ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          tableBorder: TableBorder.all(
+            color: isUser ? Colors.white24 : Colors.grey.shade200,
+            width: 1,
+          ),
         ),
-      ));
-      lastEnd = match.end;
-    }
-
-    if (lastEnd < line.length) {
-      spans.add(TextSpan(
-        text: line.substring(lastEnd),
-        style: GoogleFonts.poppins(color: baseColor, fontSize: 13.5, height: 1.5),
-      ));
-    }
-
-    if (spans.isEmpty) {
-      return Text(
-        line,
-        style: GoogleFonts.poppins(color: baseColor, fontSize: 13.5, height: 1.5),
-      );
-    }
-
-    return RichText(text: TextSpan(children: spans));
+      ),
+    );
   }
 }
 

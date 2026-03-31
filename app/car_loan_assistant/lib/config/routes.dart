@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/upload/upload_contract_screen.dart';
 import '../screens/review/contract_review_screen.dart';
 import '../screens/negotiation/negotiation_screen.dart';
 import '../screens/vin/vin_lookup_screen.dart';
 import '../screens/comparison/comparison_screen.dart';
+import '../screens/history/history_screen.dart';
 import '../screens/price/price_estimation_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/main_screen.dart';
