@@ -12,6 +12,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('HomeScreen is building!');
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -80,17 +81,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.history),
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.history),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () {
-                    // TODO: Settings screen
-                  },
-                ),
+              actions: const [
+                SizedBox(width: 8),
               ],
             ),
             

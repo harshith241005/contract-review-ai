@@ -1,16 +1,18 @@
-// Negotiation Model
+// Negotiation Model - Enhanced
 
 class NegotiationPoint {
   final String title;
   final String description;
   final NegotiationPriority priority;
   final String? suggestedAction;
+  final String category;
 
   NegotiationPoint({
     required this.title,
     required this.description,
     this.priority = NegotiationPriority.medium,
     this.suggestedAction,
+    this.category = 'general',
   });
 
   factory NegotiationPoint.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class NegotiationPoint {
       description: json['description'] ?? json['point'] ?? '',
       priority: NegotiationPriority.fromString(json['priority']),
       suggestedAction: json['suggested_action']?.toString(),
+      category: json['category'] ?? 'general',
     );
   }
 
@@ -52,12 +55,14 @@ class ChatMessage {
   final bool isUser;
   final DateTime timestamp;
   final MessageType type;
+  bool isAnimated;
 
   ChatMessage({
     required this.content,
     required this.isUser,
     DateTime? timestamp,
     this.type = MessageType.text,
+    this.isAnimated = false,
   }) : timestamp = timestamp ?? DateTime.now();
 
   factory ChatMessage.user(String content) {
@@ -79,7 +84,7 @@ enum MessageType {
 class NegotiationEmail {
   final String subject;
   final String body;
-  final String recipientType; // dealer, bank, etc.
+  final String recipientType;
 
   NegotiationEmail({
     required this.subject,

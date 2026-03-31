@@ -1,4 +1,4 @@
-// Negotiation Provider - State management for negotiation assistant
+// Negotiation Provider - Enhanced state management for negotiation assistant
 
 import 'package:flutter/material.dart';
 import '../models/contract.dart';
@@ -28,6 +28,9 @@ class NegotiationProvider extends ChangeNotifier {
   // Current contract context
   Contract? _currentContract;
   
+  // Quick action usage tracking
+  final Map<String, int> _quickActionUsage = {};
+  
   // Initialize with welcome message
   void initialize(Contract? contract) {
     _currentContract = contract;
@@ -38,7 +41,8 @@ class NegotiationProvider extends ChangeNotifier {
         "• Understand your contract terms\n"
         "• Identify negotiation opportunities\n"
         "• Generate emails to dealers\n"
-        "• Suggest questions to ask\n\n"
+        "• Suggest questions to ask\n"
+        "• Provide refinancing & warranty advice\n\n"
         "What would you like help with today?"
       ),
     ];
@@ -65,12 +69,12 @@ class NegotiationProvider extends ChangeNotifier {
       if (response.isSuccess && response.data != null) {
         _backendPoints = response.data!;
         
-        // Add backend points to negotiation points
         for (var point in _backendPoints) {
           _negotiationPoints.add(NegotiationPoint(
             title: 'Recommendation',
             description: point,
             priority: NegotiationPriority.medium,
+            category: 'recommendation',
           ));
         }
         notifyListeners();
@@ -78,6 +82,11 @@ class NegotiationProvider extends ChangeNotifier {
     } catch (e) {
       // Silently fail - we have local points as fallback
     }
+  }
+  
+  // Track quick action usage
+  void trackQuickAction(String action) {
+    _quickActionUsage[action] = (_quickActionUsage[action] ?? 0) + 1;
   }
   
   // Send a message
@@ -90,10 +99,11 @@ class NegotiationProvider extends ChangeNotifier {
     _isTyping = true;
     notifyListeners();
     
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Simulate AI typing minimum delay
+    await Future.delayed(const Duration(milliseconds: 600));
     
     // Generate response based on content
-    final response = _generateResponse(content);
+    final response = await _generateResponse(content);
     _messages.add(ChatMessage.assistant(response));
     
     _isTyping = false;
@@ -112,6 +122,7 @@ class NegotiationProvider extends ChangeNotifier {
         description: 'Your APR of ${apr}% is above average. Current market rates are around 5-7% for good credit.',
         priority: NegotiationPriority.high,
         suggestedAction: 'Ask for rate reduction or shop around with other lenders.',
+        category: 'financing',
       ));
     }
     
@@ -123,6 +134,7 @@ class NegotiationProvider extends ChangeNotifier {
         description: 'Contract includes early termination fees. This limits your flexibility.',
         priority: NegotiationPriority.medium,
         suggestedAction: 'Negotiate a lower penalty or grace period for early payoff.',
+        category: 'terms',
       ));
     }
     
@@ -134,6 +146,7 @@ class NegotiationProvider extends ChangeNotifier {
         description: 'Annual mileage of $mileage miles may be insufficient for average drivers.',
         priority: NegotiationPriority.medium,
         suggestedAction: 'Request higher mileage limit or negotiate lower overage charges.',
+        category: 'terms',
       ));
     }
     
@@ -143,6 +156,7 @@ class NegotiationProvider extends ChangeNotifier {
         title: 'Red Flag Detected',
         description: flag,
         priority: NegotiationPriority.high,
+        category: 'risk',
       ));
     }
     
@@ -150,22 +164,22 @@ class NegotiationProvider extends ChangeNotifier {
   }
   
   // Generate AI response
-  String _generateResponse(String userMessage) {
+  Future<String> _generateResponse(String userMessage) async {
     final lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.contains('interest') || lowerMessage.contains('apr') || lowerMessage.contains('rate')) {
       return _getInterestAdvice();
     }
     
-    if (lowerMessage.contains('email') || lowerMessage.contains('write') || lowerMessage.contains('message')) {
-      return _generateEmailDraft();
+    if (lowerMessage.contains('email') || lowerMessage.contains('write') || lowerMessage.contains('message') || lowerMessage.contains('draft')) {
+      return await _generateLiveEmailDraft();
     }
     
     if (lowerMessage.contains('question') || lowerMessage.contains('ask')) {
-      return _getSuggestedQuestions();
+      return await _getLiveSuggestedQuestions();
     }
     
-    if (lowerMessage.contains('negotiate') || lowerMessage.contains('deal') || lowerMessage.contains('better')) {
+    if (lowerMessage.contains('negotiate') || lowerMessage.contains('deal') || lowerMessage.contains('better') || lowerMessage.contains('tip')) {
       return _getNegotiationTips();
     }
     
@@ -177,30 +191,85 @@ class NegotiationProvider extends ChangeNotifier {
       return _getDownPaymentAdvice();
     }
     
+    if (lowerMessage.contains('refinanc')) {
+      return _getRefinancingAdvice();
+    }
+    
+    if (lowerMessage.contains('warranty') || lowerMessage.contains('extended')) {
+      return _getWarrantyAdvice();
+    }
+    
+    if (lowerMessage.contains('insurance') || lowerMessage.contains('gap')) {
+      return _getInsuranceAdvice();
+    }
+    
     // Default response
     return "I understand you're looking for help with your car loan. Here are some things I can assist with:\n\n"
-        "📝 **Contract Analysis** - Ask me about specific terms\n"
-        "💰 **Rate Negotiation** - Tips to get better rates\n"
-        "✉️ **Email Drafts** - I can write emails to dealers\n"
-        "❓ **Questions to Ask** - Get a list of important questions\n\n"
+        "📝 **Contract Analysis** — Ask me about specific terms\n"
+        "💰 **Rate Negotiation** — Tips to get better rates\n"
+        "✉️ **Email Drafts** — I can write emails to dealers\n"
+        "❓ **Questions to Ask** — Important questions for dealers\n"
+        "🔄 **Refinancing** — When and how to refinance\n"
+        "🛡️ **Warranty & Insurance** — Coverage advice\n\n"
         "What would you like me to help you with?";
   }
   
   String _getInterestAdvice() {
     final apr = _currentContract?.slaData?.interestRateApr;
     return "📊 **Interest Rate Analysis**\n\n"
-        "${apr != null ? 'Your current APR: $apr%\n\n' : ''}"
+        "${apr != null ? 'Your current APR: **$apr%**\n\n' : ''}"
         "**Tips for negotiating a better rate:**\n\n"
         "1️⃣ Check your credit score before negotiating\n"
         "2️⃣ Get pre-approved from banks/credit unions first\n"
         "3️⃣ Use competing offers as leverage\n"
         "4️⃣ Ask about special promotions or loyalty discounts\n"
         "5️⃣ Consider a shorter loan term for lower rates\n\n"
+        "**Market Rate Reference:**\n"
+        "• Excellent credit (720+): 4.5% - 6.0%\n"
+        "• Good credit (680-719): 6.0% - 8.0%\n"
+        "• Fair credit (620-679): 8.0% - 12.0%\n\n"
         "Would you like me to draft an email to request a rate reduction?";
   }
   
+  Future<String> _generateLiveEmailDraft() async {
+    if (_currentContract == null || _currentContract!.slaData == null) {
+      return "I need you to upload a contract first before I can write an accurate, personalized email draft!";
+    }
+    
+    try {
+      final response = await _apiService.generateNegotiationEmail(
+        sla: _currentContract!.slaData!.toJson(),
+        points: _backendPoints.isEmpty ? ['Requesting a lower APR matching market conditions', 'Waiving unnecessary dealer documentation fees'] : _backendPoints,
+      );
+      
+      if (response.isSuccess && response.data != null) {
+        return "✉️ **Draft Email to Dealer**\n\n---\n${response.data}\n\n---\n💡 **Pro Tip:** Attach any pre-approval letters to show you are serious!";
+      }
+      return "Sorry, there was an issue connecting to the AI backend. Falling back to template:\n\n${_generateEmailDraft()}";
+    } catch (e) {
+      return _generateEmailDraft();
+    }
+  }
+
+  Future<String> _getLiveSuggestedQuestions() async {
+    try {
+      final response = await _apiService.getDealerQuestions();
+      
+      if (response.isSuccess && response.data != null && response.data!.isNotEmpty) {
+        String md = "❓ **Here are smart questions to ask your dealer right now:**\n\n";
+        for (var q in response.data!) {
+          md += "• $q\n";
+        }
+        return md;
+      }
+      return _getSuggestedQuestions();
+    } catch (e) {
+      return _getSuggestedQuestions();
+    }
+  }
+
   String _generateEmailDraft() {
-    return "✉️ **Draft Email to Dealer**\n\n"
+    return "✉️ **Template Email to Dealer**\n\n"
         "---\n"
         "Subject: Request for Rate Review - Loan Application\n\n"
         "Dear [Dealer/Finance Manager],\n\n"
@@ -214,7 +283,7 @@ class NegotiationProvider extends ChangeNotifier {
         "[Your Name]\n"
         "[Phone Number]\n"
         "---\n\n"
-        "Feel free to customize this email before sending!";
+        "💡 **Pro Tip:** Attach your pre-approval letter for maximum leverage!";
   }
   
   String _getSuggestedQuestions() {
@@ -231,6 +300,10 @@ class NegotiationProvider extends ChangeNotifier {
         "• Is there a prepayment penalty?\n"
         "• Can I pay extra towards principal?\n"
         "• What happens if I want to refinance later?\n\n"
+        "**Hidden Fees to Watch:**\n"
+        "• Documentation fees\n"
+        "• Dealer preparation charges\n"
+        "• VIN etching fees\n\n"
         "Would you like more questions about any specific topic?";
   }
   
@@ -280,6 +353,65 @@ class NegotiationProvider extends ChangeNotifier {
         "**Negotiation Tip:**\n"
         "Don't discuss down payment until price is settled!\n\n"
         "What's your current down payment situation?";
+  }
+  
+  String _getRefinancingAdvice() {
+    return "🔄 **Refinancing Your Auto Loan:**\n\n"
+        "**When to Refinance:**\n"
+        "• Your credit score has improved significantly\n"
+        "• Market interest rates have dropped\n"
+        "• You're paying above-average rates\n"
+        "• You want to change loan duration\n\n"
+        "**How to Refinance:**\n"
+        "1️⃣ Check your current loan balance and rate\n"
+        "2️⃣ Compare offers from banks & credit unions\n"
+        "3️⃣ Calculate total savings after fees\n"
+        "4️⃣ Apply with the best lender\n"
+        "5️⃣ Complete the transfer process\n\n"
+        "**Watch Out For:**\n"
+        "• Prepayment penalties on current loan\n"
+        "• Extending loan term (reduces monthly but costs more)\n"
+        "• Application fees from new lender\n\n"
+        "Would you like help comparing refinancing options?";
+  }
+  
+  String _getWarrantyAdvice() {
+    return "🛡️ **Extended Warranty Guide:**\n\n"
+        "**Before Buying Extended Warranty:**\n"
+        "• Check what factory warranty still covers\n"
+        "• Compare dealership vs third-party warranties\n"
+        "• Read exclusions carefully\n\n"
+        "**What's Usually Worth It:**\n"
+        "✅ Powertrain coverage for high-mileage vehicles\n"
+        "✅ Comprehensive plans for luxury/complex cars\n"
+        "✅ Coverage from reputable providers\n\n"
+        "**Usually Not Worth It:**\n"
+        "• Short-term plans on reliable new cars\n"
+        "• Dealer markups on third-party warranties\n"
+        "• Plans with high deductibles\n\n"
+        "**Negotiation Tip:**\n"
+        "Extended warranties have huge markups — always negotiate the price down by 30-50%!\n\n"
+        "Need help evaluating a specific warranty offer?";
+  }
+  
+  String _getInsuranceAdvice() {
+    return "🏦 **Auto Insurance & GAP Coverage:**\n\n"
+        "**GAP Insurance:**\n"
+        "• Covers difference between car value and loan balance\n"
+        "• Essential if down payment < 20%\n"
+        "• Buy from insurer, NOT dealer (saves 50%+)\n\n"
+        "**Money-Saving Tips:**\n"
+        "✅ Bundle with home/renter's insurance\n"
+        "✅ Increase deductible to lower premium\n"
+        "✅ Ask about safe driver discounts\n"
+        "✅ Compare quotes from 3+ companies\n"
+        "✅ Review coverage annually\n\n"
+        "**Coverage You Need:**\n"
+        "• Liability (required by law)\n"
+        "• Collision (for financed vehicles)\n"
+        "• Comprehensive (theft, weather, etc.)\n"
+        "• Uninsured motorist protection\n\n"
+        "Would you like tips on reducing your premium?";
   }
   
   // Clear chat
