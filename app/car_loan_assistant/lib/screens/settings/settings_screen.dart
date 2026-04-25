@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../config/theme.dart';
 import '../../config/app_config.dart';
 
@@ -16,23 +14,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   String _selectedCurrency = 'USD (\$)';
   String _selectedLanguage = 'English';
-  final TextEditingController _apiUrlController = TextEditingController(text: AppConfig.apiBaseUrl);
 
-  @override
-  void dispose() {
-    _apiUrlController.dispose();
-    super.dispose();
-  }
+  Color get _pageBg => _darkMode ? const Color(0xFF0F172A) : const Color(0xFFF5F7FA);
+  Color get _appBarBg => _darkMode ? const Color(0xFF111827) : Colors.white;
+  Color get _cardBg => _darkMode ? const Color(0xFF1F2937) : Colors.white;
+  Color get _primaryText => _darkMode ? const Color(0xFFF9FAFB) : AppTheme.textPrimary;
+  Color get _secondaryText => _darkMode ? const Color(0xFF9CA3AF) : AppTheme.textSecondary;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: _pageBg,
       appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: AppTheme.textPrimary,
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            color: _primaryText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        elevation: 0.5,
+        scrolledUnderElevation: 0.5,
+        backgroundColor: _appBarBg,
+        foregroundColor: _primaryText,
         centerTitle: true,
       ),
       body: ListView(
@@ -59,16 +63,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _notificationsEnabled,
               onChanged: (val) => setState(() => _notificationsEnabled = val),
             ),
-          ]),
-          const SizedBox(height: 24),
-
-          _buildSectionHeader('Regional'),
-          _buildSettingsCard([
+            _buildDivider(),
             _buildDropdownTile(
               icon: Icons.monetization_on_outlined,
               title: 'Currency',
               value: _selectedCurrency,
-              items: ['USD (\$)', 'EUR (€)', 'GBP (£)', 'CAD (\$)'],
+              items: ['USD (\$)', 'INR (Rs)', 'EUR (€)', 'GBP (£)', 'CAD (\$)'],
               onChanged: (val) => setState(() => _selectedCurrency = val!),
             ),
             _buildDivider(),
@@ -78,22 +78,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _selectedLanguage,
               items: ['English', 'Spanish', 'French', 'German'],
               onChanged: (val) => setState(() => _selectedLanguage = val!),
-            ),
-          ]),
-          const SizedBox(height: 24),
-
-          _buildSectionHeader('Technical'),
-          _buildSettingsCard([
-            _buildTextFieldTile(
-              icon: Icons.api_outlined,
-              title: 'Backend API URL',
-              controller: _apiUrlController,
-              onSubmitted: (val) {
-                // In a real app, save this to persistent storage
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('API URL updated (session only)')),
-                );
-              },
             ),
           ]),
           const SizedBox(height: 24),
@@ -146,9 +130,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: Text(
               'Made with ❤️ for better car deals',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textSecondary,
+                color: _secondaryText,
               ),
             ),
           ),
@@ -163,10 +147,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: AppTheme.textSecondary,
+          color: _secondaryText,
           letterSpacing: 1.2,
         ),
       ),
@@ -175,6 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfileCard() {
     return Card(
+      color: _cardBg,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -191,17 +176,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'John Doe',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                      color: _primaryText,
                     ),
                   ),
                   Text(
                     'john.doe@example.com',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      color: _secondaryText,
                     ),
                   ),
                 ],
@@ -219,6 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSettingsCard(List<Widget> children) {
     return Card(
+      color: _cardBg,
       child: Column(children: children),
     );
   }
@@ -232,8 +218,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: GoogleFonts.poppins(fontSize: 12)),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w500, color: _primaryText),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: _secondaryText),
+      ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -251,40 +243,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w500, color: _primaryText),
+      ),
       trailing: DropdownButton<String>(
         value: value,
         underline: const SizedBox(),
+        dropdownColor: _cardBg,
         items: items.map((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
+            child: Text(
+              item,
+              style: TextStyle(fontSize: 14, color: _primaryText),
+            ),
           );
         }).toList(),
         onChanged: onChanged,
-      ),
-    );
-  }
-
-  Widget _buildTextFieldTile({
-    required IconData icon,
-    required String title,
-    required TextEditingController controller,
-    required ValueChanged<String> onSubmitted,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-      subtitle: TextField(
-        controller: controller,
-        decoration: const InputDecoration(
-          isDense: true,
-          contentPadding: EdgeInsets.symmetric(vertical: 8),
-          border: InputBorder.none,
-          fillColor: Colors.transparent,
-        ),
-        style: GoogleFonts.poppins(fontSize: 13, color: AppTheme.accentColor),
-        onSubmitted: onSubmitted,
       ),
     );
   }
@@ -300,31 +276,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: Icon(icon, color: color ?? AppTheme.primaryColor),
       title: Text(
         title,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontWeight: FontWeight.w500,
-          color: color,
+          color: color ?? _primaryText,
         ),
       ),
-      subtitle: subtitle != null ? Text(subtitle, style: GoogleFonts.poppins(fontSize: 12)) : null,
-      trailing: const Icon(Icons.chevron_right, size: 20),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: TextStyle(fontSize: 12, color: _secondaryText))
+          : null,
+      trailing: Icon(Icons.chevron_right, size: 20, color: _secondaryText),
       onTap: onTap,
     );
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, indent: 56, color: Colors.grey.withOpacity(0.1));
+    return Divider(
+      height: 1,
+      indent: 56,
+      color: _darkMode ? Colors.white12 : Colors.grey.withOpacity(0.1),
+    );
   }
 
   void _showConfirmDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text(message, style: GoogleFonts.poppins()),
+        backgroundColor: _cardBg,
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold, color: _primaryText),
+        ),
+        content: Text(message, style: TextStyle(color: _secondaryText)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: _secondaryText)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),

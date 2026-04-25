@@ -17,6 +17,7 @@ from backend.fairness_engine import calculate_fairness_score
 import json
 import traceback
 import requests
+from backend.pricing_engine import get_real_price_estimate
 
 
 def _has_value(value):
@@ -69,7 +70,7 @@ def _analyze_contract_hybrid(text: str) -> Dict[str, Any]:
     regex_sla = analyze_contract(text)
 
     if not os.getenv("OPENAI_API_KEY"):
-        regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex"
+        regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex+spacy"
         return regex_sla
 
     try:
@@ -81,7 +82,7 @@ def _analyze_contract_hybrid(text: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex"
+    regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex+spacy"
     return regex_sla
 
 # Initialize database tables on startup
@@ -261,105 +262,12 @@ async def get_negotiation_tips(request: NegotiationRequest):
 @app.get("/price-estimate")
 async def get_price_estimate(make: str, model: str, year: str, zip: Optional[str] = None):
     """
-    Get estimated price range for a vehicle (using NHTSA data as baseline)
-    Note: This is a simplified implementation. In production, 
-    integrate with Edmunds, KBB, or similar pricing APIs.
+    Get estimated price range for a vehicle using NHTSA/vehicle data
+    Supports cars from US, Europe, and India.
+    Works with ANY make/model - uses vehicle categorization and depreciation.
+    In production, integrate with Edmunds, KBB, CarWale, or similar pricing APIs.
     """
-    try:
-        # Get vehicle specifications from NHTSA
-        url = f"https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/{make}/modelyear/{year}?format=json"
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code != 200:
-            return {"error": "Could not fetch vehicle data"}
-        
-        data = response.json()
-        models = data.get("Results", [])
-        
-        # Simple price estimation based on vehicle type and age
-        current_year = 2026
-        vehicle_age = current_year - int(year)
-        
-        # Base prices by category (simplified)
-        base_prices = {
-            "sedan": 25000,
-            "suv": 35000,
-            "truck": 40000,
-            "compact": 20000,
-            "luxury": 50000,
-            "default": 28000
-        }
-        
-        # Determine category from make + model + known models from NHTSA.
-        model_lower = model.lower().strip()
-        make_lower = make.lower().strip()
-        known_models = [str(m.get("Model_Name", "")).lower() for m in models if m.get("Model_Name")]
-        model_token = "".join(ch for ch in model_lower if ch.isalnum() or ch.isspace()).strip()
-        relevant_models = []
-        if model_token:
-            for km in known_models:
-                if model_token in km or km in model_token:
-                    relevant_models.append(km)
-            relevant_models = relevant_models[:10]
-        lookup_text = f"{make_lower} {model_lower} {' '.join(relevant_models)}"
-
-        sedan_keywords = ["camry", "accord", "civic", "corolla", "elantra", "sonata", "altima", "sentra", "jetta", "passat", "mazda3", "model 3"]
-        suv_keywords = ["rav4", "cr-v", "explorer", "highlander", "santa fe", "tiguan", "x3", "x5", "model y", "wrangler", "sportage", "cx-5"]
-        truck_keywords = ["f-150", "silverado", "ram", "tundra", "sierra", "ranger", "tacoma", "colorado"]
-        compact_keywords = ["fit", "yaris", "versa", "rio", "spark", "picanto", "micra"]
-        luxury_make_keywords = ["bmw", "mercedes", "audi", "lexus", "acura", "infiniti", "porsche", "jaguar", "land rover", "genesis", "volvo"]
-
-        if any(x in lookup_text for x in luxury_make_keywords):
-            category = "luxury"
-        elif any(x in lookup_text for x in suv_keywords):
-            category = "suv"
-        elif any(x in lookup_text for x in sedan_keywords):
-            category = "sedan"
-        elif any(x in lookup_text for x in truck_keywords):
-            category = "truck"
-        elif any(x in lookup_text for x in compact_keywords):
-            category = "compact"
-        else:
-            # Make-level fallback to avoid too many generic defaults.
-            if make_lower in ["toyota", "honda", "nissan", "hyundai", "kia", "mazda", "subaru", "volkswagen", "skoda"]:
-                category = "sedan"
-            elif make_lower in ["jeep", "land rover", "mahindra"]:
-                category = "suv"
-            elif make_lower in ["ford", "chevrolet", "gmc", "ram"] and model_lower in ["", "na", "n/a", "unknown"]:
-                category = "truck"
-            else:
-                category = "default"
-        
-        base_price = base_prices[category]
-        
-        # Depreciation: ~15% first year, ~10% per year after
-        if vehicle_age <= 0:
-            estimated_price = base_price
-        elif vehicle_age == 1:
-            estimated_price = base_price * 0.85
-        else:
-            estimated_price = base_price * 0.85 * (0.90 ** (vehicle_age - 1))
-        
-        # Price range
-        low_price = int(estimated_price * 0.85)
-        high_price = int(estimated_price * 1.15)
-        
-        return {
-            "make": make,
-            "model": model,
-            "year": year,
-            "category": category,
-            "estimated_price": int(estimated_price),
-            "price_range": {
-                "low": low_price,
-                "high": high_price
-            },
-            "disclaimer": "Prices are estimates based on vehicle category and age. Actual prices vary by condition, mileage, and location."
-        }
-        
-    except Exception as e:
-        traceback.print_exc()
-        return {"error": str(e)}
+    return get_real_price_estimate(make, model, year, zip)
 
 @app.get("/health")
 async def health_check():

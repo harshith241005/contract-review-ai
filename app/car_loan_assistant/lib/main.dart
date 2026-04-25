@@ -14,6 +14,39 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
     print('WidgetsFlutterBinding initialized');
+    
+    // Initialize storage before other operations
+    print('Initializing StorageService...');
+    await StorageService.init();
+    print('StorageService initialized');
+    
+    // Global error handler to show on screen
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('CRITICAL RENDERING ERROR', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20)),
+                  const SizedBox(height: 10),
+                  Text(details.exception.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Text(details.stack.toString(), style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    };
+    
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    
   } catch (e, stack) {
     print('CRITICAL ERROR DURING INIT: $e');
     print(stack.toString());

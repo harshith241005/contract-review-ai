@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
@@ -11,9 +10,14 @@ class ToolsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Car Tools'),
-        elevation: 0,
+        title: const Text(
+          'Car Tools',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        elevation: 0.5,
+        scrolledUnderElevation: 0.5,
         backgroundColor: Colors.white,
         foregroundColor: AppTheme.textPrimary,
         centerTitle: true,
@@ -31,7 +35,7 @@ class ToolsScreen extends StatelessWidget {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.1,
+              childAspectRatio: 1.9,
               children: [
                 FeatureCard(
                   title: 'VIN Lookup',
@@ -56,24 +60,6 @@ class ToolsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            
-            _buildSectionHeader('Information'),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              context,
-              'Interest Rate Guide',
-              'Learn about current market rates',
-              Icons.trending_up,
-              Colors.orange,
-            ),
-            _buildInfoCard(
-              context,
-              'Negotiation Checklist',
-              'Crucial things to check at the dealer',
-              Icons.fact_check_outlined,
-              Colors.green,
-            ),
           ],
         ),
       ),
@@ -83,30 +69,10 @@ class ToolsScreen extends StatelessWidget {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: GoogleFonts.poppins(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: AppTheme.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(BuildContext context, String title, String subtitle, IconData icon, Color color) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle, style: GoogleFonts.poppins(fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {},
       ),
     );
   }

@@ -1,6 +1,7 @@
 ﻿import re
 from datetime import datetime
 from backend.vin_service import get_vehicle_details
+from backend.nlp_extractor import enrich_contract_fields_with_spacy
 
 
 # ---------------- HELPER FUNCTIONS ---------------- #
@@ -130,14 +131,12 @@ def analyze_contract(contract_text: str) -> dict:
     # ---------------- MONTHLY PAYMENT ---------------- #
     monthly_payment = extract_amount_from_sources(
         [
-            r"monthly\s*payment\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{1,2})?)",
-            r"monthly\s*payment[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
-            r"monthly\s+installment[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
-            r"payment\s+amount[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
-            r"monthly payment of\s*Rs\.?\s*(\d+)",
-            r"monthly payment\s*Rs\.?\s*(\d+)",
-            r"EMI\s*(\d+)",
-            r"monthly\s+installment\s*(\d+)"
+            r"monthly\s*payment\s*[:\-]?\s*(?:\$|Rs\.?\s*)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"monthly\s*payment[^0-9]{0,40}([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"monthly\s+installments?\s+of\s*(?:\$|Rs\.?\s*)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"monthly\s+installments?[^0-9]{0,40}([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"payment\s+amount[^0-9]{0,40}([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"EMI\s*(?:\$|Rs\.?\s*)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)"
         ],
         raw_text,
         text
@@ -150,6 +149,7 @@ def analyze_contract(contract_text: str) -> dict:
             r"term\s*[:\-]?\s*(\d+)\s*(?:months?|mos?)",
             r"lease\s*term\s*[:\-]?\s*(\d+)\s*(?:months?|mos?)",
             r"loan\s*term\s*[:\-]?\s*(\d+)\s*(?:months?|mos?)",
+            r"(\d+)\s*monthly\s*installments?",
             r"(\d+)\s*months",
             r"(\d+)\s*mos\b",
             r"tenure\s*[:\-]?\s*(\d+)"
@@ -180,10 +180,11 @@ def analyze_contract(contract_text: str) -> dict:
             r"principal\s+amount[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
             r"amount\s+financed[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
             r"loan\s+amount[^0-9]{0,40}(\d+(?:\.\d{1,2})?)",
-            r"Loan Amount:\s*Rs\.?\s*(\d+)",
-            r"loan amount\s*Rs\.?\s*(\d+)",
-            r"amount\s+financed\s*(\d+)",
-            r"principal\s+amount\s*(\d+)"
+            r"loan\s+of\s*Rs\.?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"Loan Amount:\s*Rs\.?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"loan amount\s*Rs\.?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"amount\s+financed\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+            r"principal\s+amount\s*([0-9][0-9,]*(?:\.\d{1,2})?)"
         ],
         raw_text,
         text
@@ -290,6 +291,29 @@ def analyze_contract(contract_text: str) -> dict:
         )
     }
 
+    # Fill only missing fields using spaCy sentence-level NLP context.
+    nlp_enriched = enrich_contract_fields_with_spacy(
+        raw_text,
+        {
+            "apr_percent": apr_percent,
+            "monthly_payment": monthly_payment,
+            "term_months": term_months,
+            "down_payment": down_payment,
+            "fees": fees,
+            "penalties": penalties,
+            "mileage_allowance": mileage_allowance,
+            "overage_charge_per_mile": overage_charge_per_mile,
+        },
+    )
+    apr_percent = nlp_enriched.get("apr_percent", apr_percent)
+    monthly_payment = nlp_enriched.get("monthly_payment", monthly_payment)
+    term_months = nlp_enriched.get("term_months", term_months)
+    down_payment = nlp_enriched.get("down_payment", down_payment)
+    fees = nlp_enriched.get("fees", fees)
+    penalties = nlp_enriched.get("penalties", penalties)
+    mileage_allowance = nlp_enriched.get("mileage_allowance", mileage_allowance)
+    overage_charge_per_mile = nlp_enriched.get("overage_charge_per_mile", overage_charge_per_mile)
+
     # ---------------- RED FLAGS ---------------- #
     red_flags = []
 
@@ -312,7 +336,7 @@ def analyze_contract(contract_text: str) -> dict:
     if fees["documentation_fee"]:
         negotiation_points.append("Negotiate documentation fee")
 
-    if penalties["early_termination"] != "No penalty":
+    if penalties["early_termination"] and penalties["early_termination"] != "No penalty":
         negotiation_points.append("Reduce early termination penalty")
 
     # ---------------- VIN EXTRACTION ---------------- #
@@ -376,5 +400,5 @@ def analyze_contract(contract_text: str) -> dict:
         "early_termination_clause": penalties.get("early_termination"),
         "red_flags": red_flags,
         "negotiation_points": negotiation_points,
-        "extraction_method": "regex"
+        "extraction_method": "regex+spacy"
     }

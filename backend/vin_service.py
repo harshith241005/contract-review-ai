@@ -1,15 +1,60 @@
 """
 VIN Service Module
-Fetches vehicle details and recall information from NHTSA API.
+Fetches vehicle details and recall information from NHTSA API with a Global API fallback.
 """
 
 import requests
+import os
 from typing import Optional
+
+
+def get_global_vin_details(vin: str) -> Optional[dict]:
+    """
+    Attempts to get VIN details from a global API (e.g., via RapidAPI).
+    Useful for Indian, European, and Asian domestic market vehicles 
+    not found in the NHTSA (US) database.
+    """
+    api_key = os.getenv("RAPIDAPI_KEY")
+    if not api_key:
+        return None
+        
+    try:
+        url = "https://vin-decoder19.p.rapidapi.com/vin_decoder"
+        querystring = {"vin": vin}
+        headers = {
+            "X-RapidAPI-Key": api_key,
+            "X-RapidAPI-Host": "vin-decoder19.p.rapidapi.com"
+        }
+        
+        response = requests.get(url, headers=headers, params=querystring, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") or "make" in data:
+                # Map global API response to our standard format
+                return {
+                    "vin": vin,
+                    "make": data.get("make"),
+                    "model": data.get("model"),
+                    "year": data.get("year"),
+                    "body_type": data.get("body_style", data.get("body_type")),
+                    "vehicle_type": data.get("vehicle_type", "Passenger Car"),
+                    "engine_displacement": data.get("engine_displacement"),
+                    "fuel_type": data.get("fuel_type"),
+                    "transmission": data.get("transmission"),
+                    "plant_country": data.get("country", data.get("plant_country")),
+                    "manufacturer": data.get("manufacturer"),
+                    "source": "Global API Decoder"
+                }
+        return None
+    except Exception as e:
+        print(f"Error fetching Global VIN Data: {e}")
+        return None
 
 
 def get_vehicle_details(vin: str) -> dict:
     """
-    Fetch vehicle details from NHTSA API using VIN.
+    Fetch vehicle details. First tries a Global API for non-US markets,
+    then falls back to NHTSA API (US Dept of Transportation).
     
     Args:
         vin: 17-character Vehicle Identification Number
@@ -19,6 +64,11 @@ def get_vehicle_details(vin: str) -> dict:
     """
     if not vin or len(vin) != 17:
         return {"error": "Invalid VIN format. Must be 17 characters."}
+        
+    # Attempt Global Decoder for better international (e.g., Indian) support
+    global_data = get_global_vin_details(vin)
+    if global_data and global_data.get("make"):
+        return global_data
     
     url_values = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/{vin}?format=json"
     url_decode = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json"

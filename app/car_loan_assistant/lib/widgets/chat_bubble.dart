@@ -1,6 +1,9 @@
 // Chat Bubble Widget - Premium Redesign
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../config/theme.dart';
 import '../models/negotiation.dart';
 
 class ChatBubble extends StatefulWidget {
@@ -118,7 +121,7 @@ class _ChatBubbleState extends State<ChatBubble>
                     children: [
                       Text(
                         _formatTime(widget.message.timestamp),
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 10,
                           color: Colors.grey[400],
                         ),
@@ -205,31 +208,31 @@ class _ChatBubbleState extends State<ChatBubble>
         data: widget.message.content,
         selectable: true,
         styleSheet: MarkdownStyleSheet(
-          p: GoogleFonts.poppins(
+          p: TextStyle(
             color: isUser ? Colors.white : AppTheme.textPrimary,
             fontSize: 14,
             height: 1.5,
           ),
-          strong: GoogleFonts.poppins(
+          strong: TextStyle(
             color: isUser ? Colors.white : AppTheme.primaryColor,
             fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
-          listBullet: GoogleFonts.poppins(
+          listBullet: TextStyle(
             color: isUser ? Colors.white70 : Colors.grey[600],
             fontSize: 14,
           ),
-          h1: GoogleFonts.poppins(
+          h1: TextStyle(
             color: isUser ? Colors.white : AppTheme.primaryColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
-          h2: GoogleFonts.poppins(
+          h2: TextStyle(
             color: isUser ? Colors.white : AppTheme.primaryColor,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
-          blockquote: GoogleFonts.poppins(
+          blockquote: TextStyle(
             color: isUser ? Colors.white70 : Colors.grey[600],
             fontStyle: FontStyle.italic,
           ),
@@ -241,11 +244,11 @@ class _ChatBubbleState extends State<ChatBubble>
               ),
             ),
           ),
-          tableBody: GoogleFonts.poppins(
+          tableBody: TextStyle(
             color: isUser ? Colors.white : AppTheme.textPrimary,
             fontSize: 12,
           ),
-          tableHead: GoogleFonts.poppins(
+          tableHead: TextStyle(
             color: isUser ? Colors.white : AppTheme.primaryColor,
             fontWeight: FontWeight.bold,
             fontSize: 12,

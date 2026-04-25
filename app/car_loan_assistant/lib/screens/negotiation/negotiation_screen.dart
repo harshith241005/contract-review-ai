@@ -4,9 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../config/theme.dart';
+import '../../config/routes.dart';
 import '../../providers/contract_provider.dart';
 import '../../providers/negotiation_provider.dart';
 import '../../models/negotiation.dart';
@@ -26,7 +25,6 @@ class _NegotiationScreenState extends State<NegotiationScreen>
   late TabController _tabController;
   late AnimationController _fabAnimController;
   late AnimationController _pageAnimController;
-  late Animation<double> _pageAnim;
   bool _showSendButton = false;
 
   @override
@@ -42,10 +40,6 @@ class _NegotiationScreenState extends State<NegotiationScreen>
     _pageAnimController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
-    );
-    _pageAnim = CurvedAnimation(
-      parent: _pageAnimController,
-      curve: Curves.easeOutCubic,
     );
     _pageAnimController.forward();
 
@@ -82,9 +76,9 @@ class _NegotiationScreenState extends State<NegotiationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 48),
+        preferredSize: const Size.fromHeight(kToolbarHeight),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -104,50 +98,30 @@ class _NegotiationScreenState extends State<NegotiationScreen>
               icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            title: Row(
+            title: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.smart_toy_rounded,
-                      color: AppTheme.accentColor, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.smart_toy_rounded,
+                          color: AppTheme.accentColor, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
                       'Negotiation Assistant',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppTheme.successColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Online',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -167,130 +141,133 @@ class _NegotiationScreenState extends State<NegotiationScreen>
               ),
               const SizedBox(width: 8),
             ],
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: AppTheme.primaryColor,
-              indicatorWeight: 3,
-              labelColor: AppTheme.primaryColor,
-              unselectedLabelColor: Colors.grey[600],
-              labelStyle: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-              tabs: const [
-                Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 20), text: 'Chat'),
-                Tab(icon: Icon(Icons.lightbulb_outline_rounded, size: 20), text: 'Tips'),
-              ],
-            ),
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              _buildContextBar(),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildChatTab(),
-                    _buildTipsTab(),
-                  ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FBFF), Color(0xFFF1F5F9)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildContextBar(),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1120),
+                  child: _buildChatTab(),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        image: DecorationImage(
-          image: const AssetImage('assets/images/chat_bg.png'), // Optional decorative pattern
-          opacity: 0.03,
-          repeat: ImageRepeat.repeat,
-          colorFilter: ColorFilter.mode(
-            AppTheme.primaryColor.withValues(alpha: 0.05),
-            BlendMode.srcATop,
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildContextBar() {
-    return Consumer<ContractProvider>(
-      builder: (context, provider, child) {
-        final contract = provider.currentContract;
+    return Consumer2<ContractProvider, NegotiationProvider>(
+      builder: (context, contractProvider, negotiationProvider, child) {
+        final contract = contractProvider.currentContract;
         if (contract == null) return const SizedBox.shrink();
+        final sla = contract.slaData;
 
-        return ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1), width: 1),
-                ),
+        final metrics = [
+          ('APR', sla?.interestRateApr != null ? '${sla!.interestRateApr}%' : null),
+          ('Monthly', sla?.monthlyPayment != null ? '\$${sla!.monthlyPayment}' : null),
+          ('Term', sla?.leaseTermMonths != null ? '${sla!.leaseTermMonths} mo' : null),
+        ].where((m) => m.$2 != null).toList();
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contract.fileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
-                    child: const Icon(Icons.description_outlined,
-                        size: 16, color: AppTheme.primaryColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        Text(
-                          'Active Negotiation',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[500],
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          contract.fileName ?? 'Unnamed Contract',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        for (final metric in metrics)
+                          _buildMetricPill(metric.$1, metric.$2!),
                       ],
                     ),
-                  ),
-                  _buildStatusChip('Analyzing', AppTheme.accentColor),
-                ],
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              _buildStatusChip(
+                negotiationProvider.isTyping ? 'Thinking' : 'Ready',
+                negotiationProvider.isTyping
+                    ? AppTheme.warningColor
+                    : AppTheme.successColor,
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMetricPill(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F8FC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -312,7 +289,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color: color,
@@ -333,7 +310,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
               child: ListView.builder(
                 controller: _scrollController,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 itemCount:
                     provider.messages.length + (provider.isTyping ? 1 : 0),
                 itemBuilder: (context, index) {
@@ -360,68 +337,61 @@ class _NegotiationScreenState extends State<NegotiationScreen>
   Widget _buildQuickActions(NegotiationProvider provider) {
     final actions = [
       (
-        '📊 Interest Tips',
+        'Interest',
+        Icons.stacked_line_chart_rounded,
         'Tell me about negotiating interest rates',
-        const Color(0xFF3B82F6),
-        const Color(0xFF1D4ED8),
+        const Color(0xFFE9EEFF),
+        AppTheme.primaryColor,
       ),
       (
-        '✉️ Draft Email',
+        'Draft Email',
+        Icons.mail_outline_rounded,
         'Write an email to the dealer',
-        const Color(0xFF8B5CF6),
-        const Color(0xFF6D28D9),
+        const Color(0xFFE9EEFF),
+        AppTheme.primaryColor,
       ),
       (
-        '❓ Questions',
+        'Questions',
+        Icons.help_outline_rounded,
         'What questions should I ask?',
-        const Color(0xFF06B6D4),
-        const Color(0xFF0891B2),
+        const Color(0xFFE9EEFF),
+        AppTheme.primaryColor,
       ),
       (
-        '💪 Negotiate',
+        'Negotiate',
+        Icons.handshake_outlined,
         'Give me negotiation tips',
-        const Color(0xFFF59E0B),
-        const Color(0xFFD97706),
+        const Color(0xFFE9EEFF),
+        AppTheme.primaryColor,
       ),
       (
-        '💵 Down Pay',
+        'Down Payment',
+        Icons.account_balance_wallet_outlined,
         'Tell me about down payment strategy',
-        const Color(0xFF10B981),
-        const Color(0xFF059669),
-      ),
-      (
-        '🔄 Refinance',
-        'Tell me about refinancing my auto loan',
-        const Color(0xFFEC4899),
-        const Color(0xFFDB2777),
-      ),
-      (
-        '🛡️ Warranty',
-        'Tell me about extended warranty',
-        const Color(0xFF6366F1),
-        const Color(0xFF4F46E5),
+        const Color(0xFFE9EEFF),
+        AppTheme.primaryColor,
       ),
     ];
 
     return Container(
-      height: 52,
-      margin: const EdgeInsets.only(top: 8),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: actions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          return _QuickActionChip(
-            label: actions[index].$1,
-            color1: actions[index].$3,
-            color2: actions[index].$4,
-            onTap: () {
-              provider.trackQuickAction(actions[index].$1);
-              _sendQuickMessage(actions[index].$2);
-            },
-          );
-        },
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final action in actions)
+            _QuickActionChip(
+              label: action.$1,
+              icon: action.$2,
+              color1: action.$4,
+              color2: action.$5,
+              onTap: () {
+                provider.trackQuickAction(action.$1);
+                _sendQuickMessage(action.$3);
+              },
+            ),
+        ],
       ),
     );
   }
@@ -467,8 +437,8 @@ class _NegotiationScreenState extends State<NegotiationScreen>
                     child: TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        hintText: 'Ask about interest, fees, or terms...',
-                        hintStyle: GoogleFonts.poppins(
+                        hintText: 'Ask one focused question about your deal...',
+                        hintStyle: TextStyle(
                           color: Colors.grey[400],
                           fontSize: 14,
                         ),
@@ -479,7 +449,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
                           vertical: 12,
                         ),
                       ),
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textPrimary,
                       ),
@@ -615,7 +585,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
         const SizedBox(height: 12),
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: AppTheme.textPrimary,
@@ -683,7 +653,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
             const SizedBox(height: 24),
             Text(
               'No Personalized Tips Yet',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -692,7 +662,7 @@ class _NegotiationScreenState extends State<NegotiationScreen>
             const SizedBox(height: 8),
             Text(
               'Upload a contract to get AI-powered\nnegotiation tips tailored to your deal',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 14,
                 height: 1.5,
@@ -715,11 +685,13 @@ class _NegotiationScreenState extends State<NegotiationScreen>
                 ],
               ),
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(AppRoutes.upload);
+                },
                 icon: const Icon(Icons.upload_file_rounded),
                 label: Text(
                   'Upload Contract',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
@@ -781,12 +753,14 @@ class _NegotiationScreenState extends State<NegotiationScreen>
 // Quick Action Chip Widget
 class _QuickActionChip extends StatefulWidget {
   final String label;
+  final IconData icon;
   final Color color1;
   final Color color2;
   final VoidCallback onTap;
 
   const _QuickActionChip({
     required this.label,
+    required this.icon,
     required this.color1,
     required this.color2,
     required this.onTap,
@@ -830,19 +804,26 @@ class _QuickActionChipState extends State<_QuickActionChip>
       child: ScaleTransition(
         scale: _scaleController,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: widget.color1.withValues(alpha: 0.1),
             border: Border.all(color: widget.color1.withValues(alpha: 0.25), width: 1.5),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            widget.label,
-            style: GoogleFonts.poppins(
-              color: widget.color2,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 14, color: widget.color2),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: widget.color2,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -969,7 +950,7 @@ class _TipCardState extends State<_TipCard>
                           children: [
                             Text(
                               widget.point.title,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.textPrimary,
@@ -980,7 +961,7 @@ class _TipCardState extends State<_TipCard>
                               widget.point.description,
                               maxLines: _expanded ? 10 : 2,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 12.5,
                                 height: 1.4,
@@ -999,7 +980,7 @@ class _TipCardState extends State<_TipCard>
                         ),
                         child: Text(
                           widget.point.priority.name.toUpperCase(),
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             color: _priorityColor,
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -1062,7 +1043,7 @@ class _TipCardState extends State<_TipCard>
                   Expanded(
                     child: Text(
                       widget.point.suggestedAction!,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         color: AppTheme.primaryColor,
                         fontSize: 13,
                         height: 1.4,
@@ -1132,7 +1113,7 @@ class _TipCardState extends State<_TipCard>
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: color,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,

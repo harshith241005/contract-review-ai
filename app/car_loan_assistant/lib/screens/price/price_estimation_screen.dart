@@ -20,14 +20,31 @@ class _PriceEstimationScreenState extends State<PriceEstimationScreen> {
   final _zipController = TextEditingController();
   
   bool _isLoading = false;
+  bool _isLoadingModels = false;
   Map<String, dynamic>? _priceData;
   String? _error;
+  List<String> _availableModels = [];
   
-  // Popular makes for dropdown suggestions
+  // Comprehensive list of car makes (Global + Indian)
   final List<String> _popularMakes = [
-    'Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan',
-    'BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Hyundai',
-    'Kia', 'Volkswagen', 'Subaru', 'Mazda', 'Tesla'
+    // Japanese
+    'Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Mitsubishi', 'Suzuki', 'Daihatsu',
+    // Korean
+    'Hyundai', 'Kia', 'Genesis',
+    // American
+    'Ford', 'Chevrolet', 'GMC', 'RAM', 'Dodge', 'Jeep', 'Tesla',
+    // European
+    'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Skoda', 'Volvo', 'Porsche', 'Jaguar', 'Land Rover',
+    // Luxury
+    'Lexus', 'Acura', 'Infiniti', 'Genesis', 'Lincoln',
+    // Indian Brands
+    'Tata', 'Maruti Suzuki', 'Mahindra', 'Bajaj',
+    // Chinese
+    'BYD', 'Geely',
+    // British
+    'MG', 'MINI',
+    // Other
+    'Renault', 'Peugeot', 'Citroën', 'Fiat', 'Hyundai', 'Force',
   ];
   
   @override

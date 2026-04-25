@@ -1,7 +1,8 @@
 // App configuration and constants
 
 class AppConfig {
-  // API Base URL - Update this when deploying
+  // Default API Base URL for local desktop/web development.
+  // Use Settings to override this when targeting Android emulator (10.0.2.2).
   static const String apiBaseUrl = 'http://localhost:8001';
   
   // API Endpoints

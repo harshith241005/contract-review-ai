@@ -36,14 +36,9 @@ class NegotiationProvider extends ChangeNotifier {
     _currentContract = contract;
     _messages = [
       ChatMessage.assistant(
-        "👋 Hello! I'm your Car Loan Negotiation Assistant.\n\n"
-        "I can help you:\n"
-        "• Understand your contract terms\n"
-        "• Identify negotiation opportunities\n"
-        "• Generate emails to dealers\n"
-        "• Suggest questions to ask\n"
-        "• Provide refinancing & warranty advice\n\n"
-        "What would you like help with today?"
+        "Hi! I reviewed your contract and I am ready to help.\n\n"
+        "Pick a quick action above or ask one focused question.\n"
+        "Examples: lower APR strategy, dealer email draft, or key questions to ask."
       ),
     ];
     
