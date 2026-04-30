@@ -4,7 +4,7 @@ import os
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOllama
 
 from backend.sla_schema import SLA_SCHEMA
 
@@ -46,10 +46,7 @@ def _normalize_schema(parsed: dict) -> dict:
 
 
 def extract_sla_with_llm(contract_text: str) -> dict:
-    """Extract SLA details using a LangChain ChatOpenAI pipeline."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return _empty_schema()
+    """Extract SLA details using a LangChain ChatOllama pipeline."""
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -63,18 +60,17 @@ Return JSON with these keys ONLY:
 {schema_keys}
 
 Contract text:
-"""
+'''
 {contract_text}
-"""
+'''
 """.strip(),
             ),
         ]
     )
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
+    llm = ChatOllama(
+        model="llama3",
         temperature=0,
-        api_key=api_key,
     )
 
     chain = prompt | llm

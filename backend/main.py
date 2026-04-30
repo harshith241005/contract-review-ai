@@ -1,4 +1,4 @@
-﻿import os
+import os
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -14,6 +14,7 @@ from backend.contract_analyzer import analyze_contract
 from backend.vin_service import get_vehicle_details
 from backend.negotiation_assistant import generate_negotiation_points
 from backend.fairness_engine import calculate_fairness_score
+from backend.chat import router as chat_router
 import json
 import traceback
 import requests
@@ -103,6 +104,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(chat_router)
 
 # Pydantic models for request/response
 class NegotiationRequest(BaseModel):
@@ -372,8 +375,7 @@ async def delete_contract(contract_id: int):
 @app.post("/analyze-llm")
 async def analyze_contract_with_llm(file: UploadFile):
     """
-    Analyze contract using LLM (GPT-4) for more accurate extraction.
-    Requires OPENAI_API_KEY in environment.
+    Analyze contract using local LLM (Ollama) for more accurate extraction.
     """
     try:
         from backend.llm_sla_extractor import extract_sla_with_llm
