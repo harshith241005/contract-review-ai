@@ -252,7 +252,7 @@ class HomeScreen extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.4,
+      childAspectRatio: 1.1,
       children: [
         FeatureCard(
           title: 'VIN Lookup',
