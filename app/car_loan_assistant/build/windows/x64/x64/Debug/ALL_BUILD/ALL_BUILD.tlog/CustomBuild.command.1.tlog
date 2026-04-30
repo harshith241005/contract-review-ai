@@ -1,0 +1,10 @@
+^C:\USERS\HARSH\ONEDRIVE\DESKTOP\INFOSYS PROJECT\CAR LOAN BOT\APP\CAR_LOAN_ASSISTANT\WINDOWS\CMAKELISTS.TXT
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SC:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/windows" "-BC:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/build/windows/x64" --check-stamp-file "C:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/build/windows/x64/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

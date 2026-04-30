@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\build\windows\x64\CMakeFiles\9e0967b23e333d326c60bfea9157794c\flutter_windows.dll.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\build\windows\x64\CMakeFiles\a6c2fc891736a751a801e0d034eddfee\flutter_assemble.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\windows\flutter\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\build\windows\x64\flutter\CMakeFiles\flutter_assemble" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{12183913-C7A7-3FCA-A849-B02DD0D4BE5E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,28 @@
+^C:\USERS\HARSH\ONEDRIVE\DESKTOP\INFOSYS PROJECT\CAR LOAN BOT\APP\CAR_LOAN_ASSISTANT\BUILD\WINDOWS\X64\CMAKEFILES\9E0967B23E333D326C60BFEA9157794C\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\Users\harsh\Downloads\flutter "PROJECT_DIR=C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant" FLUTTER_ROOT=C:\Users\harsh\Downloads\flutter "FLUTTER_EPHEMERAL_DIR=C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\windows\flutter\ephemeral" "PROJECT_DIR=C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant" "FLUTTER_TARGET=C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\lib\main.dart" DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuMzUuMQ==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049MjBmODI3NDkzOQ==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049MWU5YTgxMWJmOA==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My45LjA= DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false "PACKAGE_CONFIG=C:\Users\harsh\OneDrive\Desktop\Infosys Project\CAR LOAN BOT\app\car_loan_assistant\.dart_tool\package_config.json" C:/Users/harsh/Downloads/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HARSH\ONEDRIVE\DESKTOP\INFOSYS PROJECT\CAR LOAN BOT\APP\CAR_LOAN_ASSISTANT\BUILD\WINDOWS\X64\CMAKEFILES\A6C2FC891736A751A801E0D034EDDFEE\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HARSH\ONEDRIVE\DESKTOP\INFOSYS PROJECT\CAR LOAN BOT\APP\CAR_LOAN_ASSISTANT\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SC:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/windows" "-BC:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/build/windows/x64" --check-stamp-file "C:/Users/harsh/OneDrive/Desktop/Infosys Project/CAR LOAN BOT/app/car_loan_assistant/build/windows/x64/flutter/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
