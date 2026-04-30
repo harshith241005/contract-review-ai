@@ -320,6 +320,29 @@ class ApiService {
     }
   }
   
+  // Chat with assistant
+  Future<ApiResponse<String>> chatWithAssistant({
+    required String message,
+    required Map<String, dynamic> sla,
+  }) async {
+    try {
+      final response = await _dio.post('/chat', data: {
+        'message': message,
+        'sla': sla,
+      });
+      
+      if (response.data['error'] != null) {
+        return ApiResponse.error(response.data['error']);
+      }
+      
+      return ApiResponse.success(response.data['response']);
+    } on DioException catch (e) {
+      return ApiResponse.error(_handleDioError(e));
+    } catch (e) {
+      return ApiResponse.error('An unexpected error occurred: $e');
+    }
+  }
+  
   String _handleDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:

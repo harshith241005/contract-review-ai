@@ -69,20 +69,6 @@ def _merge_sla(regex_sla: Dict[str, Any], llm_sla: Dict[str, Any]) -> Dict[str, 
 
 def _analyze_contract_hybrid(text: str) -> Dict[str, Any]:
     regex_sla = analyze_contract(text)
-
-    if not os.getenv("OPENAI_API_KEY"):
-        regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex+spacy"
-        return regex_sla
-
-    try:
-        from backend.llm_sla_extractor import extract_sla_with_llm
-
-        llm_sla = extract_sla_with_llm(text)
-        if isinstance(llm_sla, dict) and llm_sla:
-            return _merge_sla(regex_sla, llm_sla)
-    except Exception:
-        pass
-
     regex_sla["extraction_method"] = regex_sla.get("extraction_method") or "regex+spacy"
     return regex_sla
 

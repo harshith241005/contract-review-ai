@@ -1,7 +1,45 @@
 import os
+import json
 import requests
 import traceback
 from typing import Dict, Any, Optional
+from langchain_community.chat_models import ChatOllama
+from langchain_core.messages import HumanMessage
+
+def get_ai_price_estimate(make: str, model: str, year: str) -> Optional[dict]:
+    """
+    100% Free AI-powered price estimation using local Ollama.
+    """
+    try:
+        llm = ChatOllama(model='llama3', temperature=0)
+        prompt = f'What is the estimated fair market price for a used {year} {make} {model} in good condition? Reply ONLY with JSON like {{"estimated_price": 15000, "low": 13000, "high": 17000}} with NO markdown formatting, NO backticks, and NO other text.'
+        msg = HumanMessage(content=prompt)
+        response_text = llm.invoke([msg]).content.strip()
+        
+        # Clean up any potential markdown
+        if response_text.startswith("```json"):
+            response_text = response_text.replace("```json", "").replace("```", "").strip()
+        elif response_text.startswith("```"):
+            response_text = response_text.replace("```", "").strip()
+            
+        data = json.loads(response_text)
+        if "estimated_price" in data:
+            return {
+                "make": make,
+                "model": model,
+                "year": year,
+                "estimated_price": int(data["estimated_price"]),
+                "price_range": {
+                    "low": int(data.get("low", data["estimated_price"] * 0.85)),
+                    "high": int(data.get("high", data["estimated_price"] * 1.15))
+                },
+                "source": "Local AI Estimator (Ollama)",
+                "disclaimer": "This is an AI-generated price estimate using Llama 3. It may not reflect exact real-time local market conditions."
+            }
+        return None
+    except Exception as e:
+        print(f"Error fetching AI price estimate: {e}")
+        return None
 
 def get_marketcheck_estimate(make: str, model: str, year: str, zip_code: Optional[str] = None) -> Optional[dict]:
     """
@@ -271,5 +309,10 @@ def get_real_price_estimate(make: str, model: str, year: str, zip_code: Optional
     if marketcheck_result:
         return marketcheck_result
 
-    # 3. Fallback smoothly to our integrated heuristic engine
+    # 3. Try the completely free Local AI (Ollama)
+    ai_result = get_ai_price_estimate(make, model, year)
+    if ai_result:
+        return ai_result
+
+    # 4. Fallback smoothly to our integrated heuristic engine
     return get_heuristic_price_estimate(make, model, year)

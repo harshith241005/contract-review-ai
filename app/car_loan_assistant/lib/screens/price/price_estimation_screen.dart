@@ -202,7 +202,7 @@ class _PriceEstimationScreenState extends State<PriceEstimationScreen> {
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          labelText: 'Make',
+                          labelText: 'Make *',
                           hintText: 'e.g., Toyota, Honda, Ford',
                           prefixIcon: const Icon(Icons.directions_car),
                           border: OutlineInputBorder(
@@ -226,7 +226,7 @@ class _PriceEstimationScreenState extends State<PriceEstimationScreen> {
                   TextFormField(
                     controller: _modelController,
                     decoration: InputDecoration(
-                      labelText: 'Model',
+                      labelText: 'Model *',
                       hintText: 'e.g., Camry, Accord, F-150',
                       prefixIcon: const Icon(Icons.local_offer),
                       border: OutlineInputBorder(
@@ -248,7 +248,7 @@ class _PriceEstimationScreenState extends State<PriceEstimationScreen> {
                     controller: _yearController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Year',
+                      labelText: 'Year *',
                       hintText: 'e.g., 2023',
                       prefixIcon: const Icon(Icons.calendar_today),
                       border: OutlineInputBorder(

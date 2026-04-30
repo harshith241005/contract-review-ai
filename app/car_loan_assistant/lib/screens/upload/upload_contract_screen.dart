@@ -163,8 +163,8 @@ class _UploadContractScreenState extends State<UploadContractScreen> {
       children: [
         _buildStepItem('Extracting text from document', true),
         _buildStepItem('Processing with AI', true),
-        _buildStepItem('Identifying key terms', false),
-        _buildStepItem('Calculating fairness score', false),
+        _buildStepItem('Identifying key terms', true),
+        _buildStepItem('Calculating fairness score', true),
       ],
     );
   }

@@ -429,8 +429,8 @@ class _NegotiationScreenState extends State<NegotiationScreen>
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: _showSendButton
-                            ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                            : Colors.transparent,
+                            ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                            : Colors.grey.shade300,
                         width: 1.5,
                       ),
                     ),
@@ -517,14 +517,12 @@ class _NegotiationScreenState extends State<NegotiationScreen>
               : [],
         ),
         child: IconButton(
-          icon: Icon(
-            _showSendButton ? Icons.send_rounded : Icons.mic_rounded,
+          icon: const Icon(
+            Icons.send_rounded,
             color: Colors.white,
             size: 20,
           ),
-          onPressed: _showSendButton ? _sendMessage : () {
-            HapticFeedback.mediumImpact();
-          },
+          onPressed: _showSendButton ? _sendMessage : null,
         ),
       ),
     );

@@ -199,6 +199,22 @@ class NegotiationProvider extends ChangeNotifier {
     }
     
     // Default response
+    if (_currentContract != null && _currentContract!.slaData != null) {
+      try {
+        final chatResponse = await _apiService.chatWithAssistant(
+          message: userMessage,
+          sla: _currentContract!.slaData!.toJson(),
+        );
+        if (chatResponse.isSuccess && chatResponse.data != null) {
+          return chatResponse.data!;
+        } else {
+          return "API call returned false success. Error: ${chatResponse.error}";
+        }
+      } catch (e) {
+        return "An error occurred while reaching the local AI: $e";
+      }
+    }
+    
     return "I understand you're looking for help with your car loan. Here are some things I can assist with:\n\n"
         "📝 **Contract Analysis** — Ask me about specific terms\n"
         "💰 **Rate Negotiation** — Tips to get better rates\n"
