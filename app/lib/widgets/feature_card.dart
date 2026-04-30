@@ -43,7 +43,7 @@ class FeatureCard extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               Text(
                 title,
                 style: const TextStyle(

@@ -70,6 +70,7 @@ class CarLoanAssistantApp extends StatelessWidget {
         title: 'Car Loan Assistant',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        themeMode: ThemeMode.light,
         initialRoute: AppRoutes.home,
         routes: AppRoutes.routes,
         builder: (context, child) {

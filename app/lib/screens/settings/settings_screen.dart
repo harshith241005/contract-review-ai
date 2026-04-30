@@ -10,16 +10,18 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = false;
   bool _notificationsEnabled = true;
   String _selectedCurrency = 'USD (\$)';
   String _selectedLanguage = 'English';
+  
+  String _userName = 'John Doe';
+  String _userEmail = 'john.doe@example.com';
 
-  Color get _pageBg => _darkMode ? const Color(0xFF0F172A) : const Color(0xFFF5F7FA);
-  Color get _appBarBg => _darkMode ? const Color(0xFF111827) : Colors.white;
-  Color get _cardBg => _darkMode ? const Color(0xFF1F2937) : Colors.white;
-  Color get _primaryText => _darkMode ? const Color(0xFFF9FAFB) : AppTheme.textPrimary;
-  Color get _secondaryText => _darkMode ? const Color(0xFF9CA3AF) : AppTheme.textSecondary;
+  final Color _pageBg = const Color(0xFFF5F7FA);
+  final Color _appBarBg = Colors.white;
+  final Color _cardBg = Colors.white;
+  final Color _primaryText = AppTheme.textPrimary;
+  final Color _secondaryText = AppTheme.textSecondary;
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           _buildSectionHeader('App Preferences'),
           _buildSettingsCard([
-            _buildSwitchTile(
-              icon: Icons.dark_mode_outlined,
-              title: 'Dark Mode',
-              subtitle: 'Enable dark theme for the app',
-              value: _darkMode,
-              onChanged: (val) => setState(() => _darkMode = val),
-            ),
-            _buildDivider(),
             _buildSwitchTile(
               icon: Icons.notifications_none_outlined,
               title: 'Notifications',
@@ -175,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'John Doe',
+                    _userName,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -183,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   Text(
-                    'john.doe@example.com',
+                    _userEmail,
                     style: TextStyle(
                       fontSize: 14,
                       color: _secondaryText,
@@ -194,10 +188,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor),
-              onPressed: () {},
+              onPressed: _showEditProfileDialog,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _userName);
+    final emailController = TextEditingController(text: _userEmail);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _userName = nameController.text;
+                _userEmail = emailController.text;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -293,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Divider(
       height: 1,
       indent: 56,
-      color: _darkMode ? Colors.white12 : Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withOpacity(0.1),
     );
   }
 

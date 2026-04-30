@@ -162,7 +162,7 @@ class HomeScreen extends StatelessWidget {
             
             // Bottom padding
             const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
+              child: SizedBox(height: 100),
             ),
           ],
         ),
@@ -250,9 +250,9 @@ class HomeScreen extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 2.3,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.4,
       children: [
         FeatureCard(
           title: 'VIN Lookup',
